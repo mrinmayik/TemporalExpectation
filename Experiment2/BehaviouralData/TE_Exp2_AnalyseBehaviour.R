@@ -18,6 +18,8 @@ CBPath <- paste(BasePath, "Experiment1/Counterbalancing/", sep = "")
 
 NumBlocks <- 2
 
+toexclude <- c()
+
 #Set plotting variables
 xaxistheme <- theme(axis.title.x = element_text(face="bold", size=20), axis.text.x = element_text(colour="#000000", size=18)) #, family="Times"
 yaxistheme <- theme(axis.title.y = element_text(face="bold", size=20), axis.text.y = element_text(colour="#000000", size=14))
@@ -26,6 +28,8 @@ legendtheme <- theme(legend.text=element_text(face="bold", size=10), legend.titl
 bgtheme <- theme(panel.background = element_rect(fill = "white", colour = "black", size = 1, linetype = "solid"),
                  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "#D6D6D6"), 
                  panel.grid.minor = element_line(size = 0.5, linetype = 'solid', colour = "#D6D6D6"))
+stdbar <- geom_bar(stat="identity", position="dodge", color="#000000", size=1.5)
+
 
 ########################## Functions ##########################
 
@@ -115,12 +119,18 @@ CheckTrialNumbers <- function(Vars){
 FileNames <- list.files(path=DataPath, pattern="*Encode.txt",
                         full.names=TRUE)
 
+ColOrd <- c("Participant", "ListAssignment", "ListType", "Thirds", "Set", "NumPres", "Trial", "Block", "Condition", "Category", 
+            "Items", "ISIType", "ISI", "Picture", "ObjectTime")
+
+
 EncodeData=c()
 #Read in data
-for(Files in FileNames){
+for(Files in FileNames[1:7]){
   PartData <- read_tsv(Files)
   PartID <- paste(strsplit(strsplit(Files, "//")[[1]][2], "_")[[1]][1:2], collapse="_")
   PartData$Participant <- PartID
+  
+  PartData <- PartData[, !(names(PartData) %in% c("Items"))]
   #Read in CB
   ThisCB <- read.csv(paste(CBPath, "CB_Encode_",
                              paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
@@ -130,13 +140,16 @@ for(Files in FileNames){
   PartData <- merge(PartData, ThisCB, by="Trial", all.x=TRUE, all.y=TRUE)
   
   
-  EncodeData <- rbind(EncodeData, PartData)
+  EncodeData <- rbind(EncodeData, PartData[, ColOrd])
 }
 
 (EncodePerParticipant <- ddply(EncodeData, c("Participant", "Block"), summarise,
                                Trials = length(Participant), 
                                IdealTrials = 192,
                                SC = Trials==IdealTrials))
+
+(CheckTrials <- all(EncodePerParticipant$SC))
+CheckTrialNumbers(CheckTrials)
 
 #Add a column for trial duration
 EncodeData <- ddply(EncodeData, c("Participant", "Block"), AddTrialDur)
@@ -147,8 +160,9 @@ EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>60
 
 View(EncodeData[EncodeData$TimeProblem==TRUE,])
 #Any wrong times that aren't the last trial for a block?
-(CheckTime <- all(EncodeData[EncodeData$TimeProblem==TRUE, "Trial"] %in% c(192, 384)))
-CheckTrialNumbers(CheckTime)
+View(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial %in% c(192, 384))), ])
+
+toexclude <- c(toexclude, unique(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial %in% c(192, 384))), "Participant"]))
 
 #========================== Work with Encode Data Ends 
 
@@ -157,28 +171,3 @@ CheckTrialNumbers(CheckTime)
 #========================== Work with Test Data ==========================
 
 #ListFiles
-FileNames <- list.files(path=DataPath, pattern="*Test.txt",
-                        full.names=TRUE)
-
-TestData=c()
-#Read in data
-for(Files in FileNames){
-  PartData <- read_tsv(Files)
-  PartID <- paste(strsplit(strsplit(Files, "//")[[1]][2], "_")[[1]][1:2], collapse="_")
-  PartData$Participant <- PartID
-  #Read in CB
-  ThisCB <- read.csv(paste(CBPath, "CB_Test_",
-                           paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
-  #Add a trial column to the CB
-  ThisCB$TrialPres <- 1:288
-  #Combine this with the data
-  PartData <- merge(PartData, ThisCB, by.x="Trial", by.y="TrialPres", all.x=TRUE, all.y=TRUE)
-  
-  
-  TestData <- rbind(TestData, PartData)
-}
-
-
-
-
-
