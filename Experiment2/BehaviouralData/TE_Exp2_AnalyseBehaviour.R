@@ -171,3 +171,39 @@ toexclude <- c(toexclude, unique(EncodeData[which(EncodeData$TimeProblem==TRUE &
 #========================== Work with Test Data ==========================
 
 #ListFiles
+FileNames <- list.files(path=DataPath, pattern="*Test.txt",
+                        full.names=TRUE)
+
+TestData=c()
+#Read in data
+for(Files in FileNames){
+  PartData <- read_tsv(Files)
+  
+  
+  PartID <- paste(strsplit(strsplit(Files, "//")[[1]][2], "_")[[1]][1:2], collapse="_")
+  PartData$Participant <- PartID
+  
+  #Read in CB
+  ThisCB <- read.csv(paste(CBPath, "CB_Test_", paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
+  #Make an items column for merging purposes
+  ThisCB$Items <- as.data.frame(str_split_fixed(ThisCB$Picture, ".png", 2))[,1]
+  
+  #Add a trial column to the CB
+  ThisCB$Trial <- 1:288
+  #Combine this with the data
+  PartData <- merge(PartData, ThisCB, by=c("Items", "Trial"), all.x=TRUE, all.y=TRUE)
+  
+  
+  TestData <- rbind(TestData, PartData)
+}
+
+(TestPerParticipant <- ddply(TestData, c("Participant", "Block"), summarise,
+                               Trials = length(Participant), 
+                               IdealTrials = 144,
+                               SC = Trials==IdealTrials))
+
+(CheckTrials <- all(EncodePerParticipant$SC))
+CheckTrialNumbers(CheckTrials)
+
+
+
