@@ -9,7 +9,6 @@ library(plyr)
 library(readr)
 library(ggplot2)
 
-
 ########################## Set Admin variables ##########################
 
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalAttention/Experiment/"
@@ -246,7 +245,7 @@ length(unique(PartAcc$Participant))
 
 TotalAcc <- SummaryData(PartAcc, "PercAcc")
 
-PartAcc$Exclude <- (PartAcc$PercAcc<=(TotalAcc$Mean-TotalAcc$SD)) | (PartAcc$PercAcc>=(TotalAcc$Mean+TotalAcc$SD))
+PartAcc$Exclude <- (PartAcc$PercAcc<=(TotalAcc$Mean-(2*TotalAcc$SD))) | (PartAcc$PercAcc>=(TotalAcc$Mean+(2*TotalAcc$SD)))
 toexclude <- c(toexclude, PartAcc[PartAcc$Exclude==TRUE, "Participant"])
 
 #Remove participants whose accuracy is too low or too high
@@ -284,7 +283,32 @@ TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Block, y=Mean, fill=Condition)) 
   geom_hline(yintercept = 100/4, linetype="dashed", size=1) + 
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
+#### Look at RT now
 
+unique(TestData$Participant)
+length(unique(TestData$Participant))
+
+#Calculate RT
+TestData$RT <- TestData$RespTime-TestData$ObjectTime
+#Collapse RT across trials
+TestRT <- ddply(TestData, c("Participant", "Block", "Condition"), SummaryData, "RT")
+#Collapse across participants
+SummaryTestRT <- ddply(TestRT, c("Block", "Condition"), SummaryData, "Mean")
+SummaryTestRT$Block <- factor(SummaryTestRT$Block, levels=c("TR", "TI"), labels=c("Regular", "Irregular"))
+SummaryTestRT$Condition <- factor(SummaryTestRT$Condition, 
+                                   levels=c("Old", "Similar_HI", "Similar_LI", "New"), 
+                                   labels=c("Old", "Similar: HI", "Similar: LI", "New"))
+
+TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Block, y=Mean, fill=Condition)) +
+  stdbar +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  scale_fill_manual(values=c("#00185C", "#D0902B", "#F1D4A6", "#CA2F2F"),
+                    breaks=c("Old", "Similar: HI", "Similar: LI", "New"), 
+                    labels=c("Old", "Similar: HI", "Similar: LI", "New")) + 
+  labs(x="Condition", y="RT", fill="Object Type") +
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+
+View(TestData)
 ?geom_errorbar
 
 
