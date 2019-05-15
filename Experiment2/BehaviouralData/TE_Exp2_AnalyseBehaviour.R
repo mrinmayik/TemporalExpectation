@@ -174,11 +174,27 @@ toexclude <- c(toexclude, unique(EncodeData[which(EncodeData$TimeProblem==TRUE &
 FileNames <- list.files(path=DataPath, pattern="*Test.txt",
                         full.names=TRUE)
 
+ColdOrd <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
+             "Items", "ObjectTime", "Resp", "RespTime")
+
 TestData=c()
+SameResp <- c()
+SecRespNew <- c()
 #Read in data
 for(Files in FileNames){
   PartData <- read_tsv(Files)
   
+  #Coding this "absolutely" to make sure it's not removing any random trials
+  if(all(PartData[143:144, "Items"]==PartData[145:146, "Items"])){
+    #Are the answers to the repeated the same?
+    SameResp <- cbind(SameResp, (PartData[143:144, "Resp"]==PartData[145:146, "Resp"]))
+    #Is the response the second time around always new (because the object hadn't occurred in the corresponding block)?
+    SecRespNew <- cbind(SecRespNew, PartData[145:146, "Resp"]==3)
+    PartData <- PartData[-(145:146),]
+  }
+  
+  #Add trial number to help with merging
+  PartData$Trial <- rep_len(1:144, 288)
   
   PartID <- paste(strsplit(strsplit(Files, "//")[[1]][2], "_")[[1]][1:2], collapse="_")
   PartData$Participant <- PartID
@@ -189,12 +205,12 @@ for(Files in FileNames){
   ThisCB$Items <- as.data.frame(str_split_fixed(ThisCB$Picture, ".png", 2))[,1]
   
   #Add a trial column to the CB
-  ThisCB$Trial <- 1:288
+  #ThisCB$Trial <- 1:288
   #Combine this with the data
   PartData <- merge(PartData, ThisCB, by=c("Items", "Trial"), all.x=TRUE, all.y=TRUE)
   
   
-  TestData <- rbind(TestData, PartData)
+  TestData <- rbind(TestData, PartData[, ColdOrd])
 }
 
 (TestPerParticipant <- ddply(TestData, c("Participant", "Block"), summarise,
