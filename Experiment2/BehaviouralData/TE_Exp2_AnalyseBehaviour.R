@@ -35,9 +35,9 @@ stdbar <- geom_bar(stat="identity", position="dodge", color="#000000", size=1.5)
 
 #Get mean, median etc. Good for plotting. This function can be used in conjunction with ddply
 #That way you can get the mean, median etc per group/condition. 
-SummaryData <- function(df, UseVar){
-  M=mean(df[,UseVar], na.rm=TRUE)
-  SD <- sd(df[,UseVar], na.rm=TRUE)
+SummaryData <- function(df, UseVar, RMNA=FALSE){
+  M=mean(df[,UseVar], na.rm=RMNA)
+  SD <- sd(df[,UseVar], na.rm=RMNA)
   SE <- SD / sqrt(nrow(df))
   LCI <- M - 1.96*SE
   HCI <- M + 1.96*SE
@@ -125,7 +125,7 @@ ColOrd <- c("Participant", "ListAssignment", "ListType", "Thirds", "Set", "NumPr
 
 EncodeData=c()
 #Read in data
-for(Files in FileNames[1:7]){
+for(Files in FileNames){
   PartData <- read_tsv(Files)
   PartID <- paste(strsplit(strsplit(Files, "//")[[1]][2], "_")[[1]][1:2], collapse="_")
   PartData$Participant <- PartID
@@ -156,13 +156,15 @@ EncodeData <- ddply(EncodeData, c("Participant", "Block"), AddTrialDur)
 EncodeData$IdealTrialDur <- EncodeData$ISI+1000
 #Check if that matches up with what it should be
 EncodeData$TimeDiscrepancy <- EncodeData$IdealTrialDur - EncodeData$TrialDur
-EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>60
+EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>70
 
 View(EncodeData[EncodeData$TimeProblem==TRUE,])
 #Any wrong times that aren't the last trial for a block?
 View(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial %in% c(192, 384))), ])
 
 toexclude <- c(toexclude, unique(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial %in% c(192, 384))), "Participant"]))
+
+EncodeData <- EncodeData[!(EncodeData$Participant %in% toexclude), ]
 
 #========================== Work with Encode Data Ends 
 
@@ -218,8 +220,79 @@ for(Files in FileNames){
                                IdealTrials = 144,
                                SC = Trials==IdealTrials))
 
-(CheckTrials <- all(EncodePerParticipant$SC))
+(CheckTrials <- all(TestPerParticipant$SC))
 CheckTrialNumbers(CheckTrials)
+
+#Exclude the problematic participants from test
+TestData <- TestData[!(TestData$Participant %in% toexclude), ]
+(CheckParts <- all(unique(TestData$Participant) %in% unique(EncodeData$Participant)))
+CheckTrialNumbers(CheckParts)
+
+#Just order the rows
+TestData <- TestData[order(TestData$Participant, TestData$Block, TestData$Trial), ]
+
+TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New"), labels=c(1, 2, 3))
+#Are responses correct?
+TestData$Acc <- TestData$Resp==TestData$CorrCode
+
+(PartAcc <- ddply(TestData, c("Participant"), summarise, 
+                 BehAcc=sum(Acc), 
+                 BehNAcc=sum(!Acc),
+                 TotalBehTrials=sum(BehAcc, BehNAcc),
+                 IdealTrials=length(Participant),
+                 PercAcc=(BehAcc/TotalBehTrials)*100,
+                 SC=TotalBehTrials==IdealTrials))
+length(unique(PartAcc$Participant))
+
+TotalAcc <- SummaryData(PartAcc, "PercAcc")
+
+PartAcc$Exclude <- (PartAcc$PercAcc<=(TotalAcc$Mean-TotalAcc$SD)) | (PartAcc$PercAcc>=(TotalAcc$Mean+TotalAcc$SD))
+toexclude <- c(toexclude, PartAcc[PartAcc$Exclude==TRUE, "Participant"])
+
+#Remove participants whose accuracy is too low or too high
+TestGoodData <- TestData[!(TestData$Participant %in% toexclude), ]
+unique(TestGoodData$Participant)
+length(unique(TestGoodData$Participant))
+
+#Collapse across trials
+TestAcc <- ddply(TestGoodData, c("Participant", "Block", "Condition"), summarise, 
+                 BehAcc=sum(Acc), 
+                 BehNAcc=sum(!Acc),
+                 TotalBehTrials=sum(BehAcc, BehNAcc),
+                 IdealTrials=length(Participant),
+                 PercAcc=(BehAcc/TotalBehTrials)*100,
+                 SC=TotalBehTrials==IdealTrials)
+(CheckSumTrials <- all(TestAcc$SC))
+(CheckOldNewTrials <- all(TestAcc[TestAcc$Condition %in% c("Old", "New"), "TotalBehTrials"]==48))
+(CheckSimTrials <- all(TestAcc[TestAcc$Condition %in% c("Similar_HI", "Similar_LI"), "TotalBehTrials"]==24))
+CheckTrialNumbers(c(CheckSumTrials, CheckOldNewTrials, CheckSimTrials))
+
+#Collapse across Participants
+SummaryTestAcc <- ddply(TestAcc, c("Block", "Condition"), SummaryData, "PercAcc")
+SummaryTestAcc$Block <- factor(SummaryTestAcc$Block, levels=c("TR", "TI"), labels=c("Regular", "Irregular"))
+SummaryTestAcc$Condition <- factor(SummaryTestAcc$Condition, 
+                                   levels=c("Old", "Similar_HI", "Similar_LI", "New"), 
+                                   labels=c("Old", "Similar: HI", "Similar: LI", "New"))
+
+TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Block, y=Mean, fill=Condition)) +
+  stdbar +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  scale_fill_manual(values=c("#00185C", "#D0902B", "#F1D4A6", "#CA2F2F"),
+                    breaks=c("Old", "Similar: HI", "Similar: LI", "New"), 
+                    labels=c("Old", "Similar: HI", "Similar: LI", "New")) + 
+  labs(x="Condition", y="Accuracy", fill="Object Type") + 
+  geom_hline(yintercept = 100/4, linetype="dashed", size=1) + 
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+
+
+?geom_errorbar
+
+
+
+
+
+
+
 
 
 
