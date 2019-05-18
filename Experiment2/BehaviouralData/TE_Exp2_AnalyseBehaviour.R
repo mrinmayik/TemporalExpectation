@@ -135,6 +135,9 @@ for(Files in FileNames){
                              paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
   #Add a trial column to the CB
   ThisCB$Trial <- 1:384
+  
+  ThisCB$FileName <- as.data.frame(str_split_fixed(ThisCB$Picture, ".png", 2))[,1]
+  
   #Combine this with the data
   PartData <- merge(PartData, ThisCB, by="Trial", all.x=TRUE, all.y=TRUE)
   
@@ -203,12 +206,15 @@ for(Files in FileNames){
   #Read in CB
   ThisCB <- read.csv(paste(CBPath, "CB_Test_", paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
   #Make an items column for merging purposes
-  ThisCB$Items <- as.data.frame(str_split_fixed(ThisCB$Picture, ".png", 2))[,1]
+  ThisCB$FileName <- as.data.frame(str_split_fixed(ThisCB$Picture, ".png", 2))[,1]
   
   #Add a trial column to the CB
   #ThisCB$Trial <- 1:288
+  
+  PartData <- PartData %>% dplyr::rename(DispPic=Items)
+  
   #Combine this with the data
-  PartData <- merge(PartData, ThisCB, by=c("Items", "Trial"), all.x=TRUE, all.y=TRUE)
+  PartData <- merge(PartData, ThisCB, by.x=c("DispPic", "Trial"), by.y=c("FileName", "Trial"), all.x=TRUE, all.y=TRUE)
   
   
   TestData <- rbind(TestData, PartData[, ColdOrd])
@@ -229,6 +235,8 @@ CheckTrialNumbers(CheckParts)
 
 #Just order the rows
 TestData <- TestData[order(TestData$Participant, TestData$Block, TestData$Trial), ]
+
+##### Look at accuracy
 
 TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New"), labels=c(1, 2, 3))
 #Are responses correct?
@@ -283,7 +291,7 @@ TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Block, y=Mean, fill=Condition)) 
   geom_hline(yintercept = 100/4, linetype="dashed", size=1) + 
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
-#### Look at RT now
+##### Look at RT now
 
 unique(TestData$Participant)
 length(unique(TestData$Participant))
@@ -308,7 +316,87 @@ TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Block, y=Mean, fill=Condition)) +
   labs(x="Condition", y="RT", fill="Object Type") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
+##### Look at data by thirds
+
+NumParticipants <- length(FileNames)-length(unique(toexclude))
+
+EncodeData <- EncodeData[!(EncodeData$Participant %in% toexclude), ]
+#Add the response to encoding data
+EncodeWithResp <- merge(EncodeData, TestData, by=c("Participant", "Block", "Items", "ListType", "Category", "ListAssignment", "Condition"), 
+                        all.x=TRUE, all.y=TRUE, suffixes=c("_Encode", "_Test"))
+#Check trial numbers
+all(EncodeWithResp[as.data.frame(CheckMerge(EncodeWithResp))$row, "Condition"]=="New")
+EncodeWithResp <- EncodeWithResp[EncodeWithResp$Condition !="New", ]
+CheckMerge(EncodeWithResp)
+
+#Only keep first presentation
+EncodeWithResp <- EncodeWithResp[EncodeWithResp$NumPres==1, ]
+#Participants*192/2 trials(only one presentation)*2 block
+(TrialNumbers <- NumParticipants*(192/2)*2 == nrow(EncodeWithResp))
+CheckTrialNumbers(TrialNumbers)
+
+#Collapse across trials
+ThirdsAcc <- ddply(EncodeWithResp, c("Participant", "Block", "Thirds"), summarise, 
+                   BehAcc=sum(Acc), 
+                   BehNAcc=sum(!Acc),
+                   TotalBehTrials=sum(BehAcc, BehNAcc),
+                   PercAcc=(BehAcc/TotalBehTrials)*100,
+                   IdealTrials=32,
+                   SC=TotalBehTrials==IdealTrials)
+
+
+#Collapse across participants
+SummaryThirdsAcc <- ddply(ThirdsAcc, c("Block", "Thirds"), SummaryData, "PercAcc")
+
+ThirdsLine <- ggplot(data=SummaryThirdsAcc, aes(x=Thirds, y=Mean, group=Block)) +
+  geom_point() + 
+  geom_line(aes(colour=Block), size=1.2) + 
+  #geom_segment(mapping=aes(x = 3.5, y = 30, xend = 3.5, yend = 85), size=0.5) + 
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9) +
+  geom_hline(aes(yintercept=33), linetype="dashed", size=1) +
+  #scale_linetype_manual(values=c("twodash", "dotted"))+
+  coord_cartesian(ylim=c(25, 90)) +  
+  scale_color_manual(values=c('#feb24c','#f03b20'))+
+  labs(x="Thirds", y="Accuracy", colour="Block") + 
+  xaxistheme + yaxistheme + plottitletheme + legendtheme + bgtheme
+
+##Look at this by condition
+
+#Collapse across trials
+ThirdsAcc_Cond <- ddply(EncodeWithResp, c("Participant", "Block", "Thirds", "Condition"), summarise, 
+                        BehAcc=sum(Acc), 
+                        BehNAcc=sum(!Acc),
+                        TotalBehTrials=sum(BehAcc, BehNAcc),
+                        PercAcc=(BehAcc/TotalBehTrials)*100)
+
+ThirdsAcc_Cond <- ddply(ThirdsAcc_Cond, c("Participant", "Block", "Thirds"), mutate, 
+                        IdealTrials=sum(TotalBehTrials), SC=IdealTrials==32)
+
+#Collapse across participants
+SummaryThirdsAcc_Cond <- ddply(ThirdsAcc_Cond, c("Block", "Thirds", "Condition"), SummaryData, "PercAcc")
+
+for(cond in unique(SummaryThirdsAcc_Cond$Condition)){
+  ThirdsLine_Cond <- ggplot(data=SummaryThirdsAcc_Cond[SummaryThirdsAcc_Cond$Condition==cond,], 
+                       aes(x=Thirds, y=Mean, group=Block)) +
+    geom_point() + 
+    geom_line(aes(colour=Block), size=1.2) + 
+    #geom_segment(mapping=aes(x = 3.5, y = 30, xend = 3.5, yend = 85), size=0.5) + 
+    geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9) +
+    geom_hline(aes(yintercept=33), linetype="dashed", size=1) +
+    #scale_linetype_manual(values=c("twodash", "dotted"))+
+    coord_cartesian(ylim=c(40, 90)) +  
+    ggtitle(cond) + 
+    scale_color_manual(values=c('#feb24c','#f03b20'))+
+    labs(x="Thirds", y="Accuracy", colour="Block") + 
+    xaxistheme + yaxistheme + plottitletheme + legendtheme + bgtheme
+    
+    plot(ThirdsLine_Cond)
+}
+
+names(EncodeData)
+names(TestData)
 View(TestData)
+View(EncodeData)
 ?geom_errorbar
 
 
