@@ -324,10 +324,15 @@ EncodeData <- EncodeData[!(EncodeData$Participant %in% toexclude), ]
 #Add the response to encoding data
 EncodeWithResp <- merge(EncodeData, TestData, by=c("Participant", "Block", "Items", "ListType", "Category", "ListAssignment", "Condition"), 
                         all.x=TRUE, all.y=TRUE, suffixes=c("_Encode", "_Test"))
+
 #Check trial numbers
 all(EncodeWithResp[as.data.frame(CheckMerge(EncodeWithResp))$row, "Condition"]=="New")
+NewWithResp <- EncodeWithResp[EncodeWithResp$Condition !="New", ]
+
 EncodeWithResp <- EncodeWithResp[EncodeWithResp$Condition !="New", ]
 CheckMerge(EncodeWithResp)
+
+
 
 #Only keep first presentation
 EncodeWithResp <- EncodeWithResp[EncodeWithResp$NumPres==1, ]
@@ -393,11 +398,43 @@ for(cond in unique(SummaryThirdsAcc_Cond$Condition)){
     plot(ThirdsLine_Cond)
 }
 
-names(EncodeData)
-names(TestData)
-View(TestData)
-View(EncodeData)
-?geom_errorbar
+##### Look at first block
+
+EncodeWithResp <- EncodeWithResp[order(EncodeWithResp$Participant, EncodeWithResp$ObjectTime_Test, EncodeWithResp$Trial_Test), ]
+
+TRFirst <- c("CB1a_1","CB1b_1", "CB3b_1", "CB5a_1", "CB5b_1", "CB8a_1", "CB8b_1")
+TIFirst <- c("CB2a_2", "CB2b_1", "CB2b_2", "CB2b_3", "CB4a_1", "CB4b_1", "CB6a_1", "CB6a_2", "CB6b_1", "CB7a_2", "CB7b_1")
+
+EncodeWithResp[EncodeWithResp$Participant %in% TRFirst, "BlockNum"] <- "TRFirst"
+EncodeWithResp[EncodeWithResp$Participant %in% TIFirst, "BlockNum"] <- "TIFirst"
+CheckMerge(EncodeWithResp)
+
+#Collapse across trials
+BlockNumAcc <- ddply(EncodeWithResp, c("Participant", "Block", "Condition", "BlockNum"), summarise, 
+                     BehAcc=sum(Acc), 
+                     BehNAcc=sum(!Acc),
+                     TotalBehTrials=sum(BehAcc, BehNAcc),
+                     PercAcc=(BehAcc/TotalBehTrials)*100,
+                     IdealTrials=96,
+                     SC=TotalBehTrials==IdealTrials)
+
+SummaryBlockNumAcc <- ddply(BlockNumAcc, c("Block", "Condition", "BlockNum"), SummaryData, "PercAcc")
+
+SummaryBlockNumAcc$BlockNum_Cond <- paste(SummaryBlockNumAcc$Block, SummaryBlockNumAcc$BlockNum, sep="_")
+
+SummaryBlockNumAcc$BlockNum_Cond <- factor(SummaryBlockNumAcc$BlockNum_Cond, 
+                                           levels=c("TR_TRFirst", "TI_TRFirst", "TI_TIFirst","TR_TIFirst"))
+
+BlockNumBar <- ggplot(data=SummaryBlockNumAcc, aes(x=BlockNum_Cond, y=Mean, fill=Condition)) +
+  stdbar +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  scale_fill_manual(values=c("#00185C", "#D0902B", "#F1D4A6", "#CA2F2F"),
+                    breaks=c("Old", "Similar: HI", "Similar: LI", "New"), 
+                    labels=c("Old", "Similar: HI", "Similar: LI", "New")) + 
+  labs(x="Block Order", y="Accuracy", fill="Object Type") +
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+
+
 
 
 
