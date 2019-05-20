@@ -150,6 +150,7 @@ for(Files in FileNames){
                                IdealTrials = 192,
                                SC = Trials==IdealTrials))
 
+length(unique(EncodeData$Participant))
 (CheckTrials <- all(EncodePerParticipant$SC))
 CheckTrialNumbers(CheckTrials)
 
@@ -352,6 +353,8 @@ ThirdsAcc <- ddply(EncodeWithResp, c("Participant", "Block", "Thirds"), summaris
 
 #Collapse across participants
 SummaryThirdsAcc <- ddply(ThirdsAcc, c("Block", "Thirds"), SummaryData, "PercAcc")
+SummaryThirdsAcc$Block <- factor(SummaryThirdsAcc$Block, levels=c("TR", "TI"), labels=c("Regular", "Irregular"))
+SummaryThirdsAcc$Thirds <- factor(SummaryThirdsAcc$Thirds)
 
 ThirdsLine <- ggplot(data=SummaryThirdsAcc, aes(x=Thirds, y=Mean, group=Block)) +
   geom_point() + 
@@ -379,6 +382,11 @@ ThirdsAcc_Cond <- ddply(ThirdsAcc_Cond, c("Participant", "Block", "Thirds"), mut
 
 #Collapse across participants
 SummaryThirdsAcc_Cond <- ddply(ThirdsAcc_Cond, c("Block", "Thirds", "Condition"), SummaryData, "PercAcc")
+SummaryThirdsAcc_Cond$Block <- factor(SummaryThirdsAcc_Cond$Block, levels=c("TR", "TI"), labels=c("Regular", "Irregular"))
+SummaryThirdsAcc_Cond$Condition <- factor(SummaryThirdsAcc_Cond$Condition, 
+                                          levels=c("Old", "Similar_HI", "Similar_LI"), 
+                                          labels=c("Old", "Similar: HI", "Similar: LI"))
+SummaryThirdsAcc_Cond$Thirds <- factor(SummaryThirdsAcc_Cond$Thirds)
 
 for(cond in unique(SummaryThirdsAcc_Cond$Condition)){
   ThirdsLine_Cond <- ggplot(data=SummaryThirdsAcc_Cond[SummaryThirdsAcc_Cond$Condition==cond,], 
@@ -389,7 +397,7 @@ for(cond in unique(SummaryThirdsAcc_Cond$Condition)){
     geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9) +
     geom_hline(aes(yintercept=33), linetype="dashed", size=1) +
     #scale_linetype_manual(values=c("twodash", "dotted"))+
-    coord_cartesian(ylim=c(40, 90)) +  
+    coord_cartesian(ylim=c(40, 93)) +  
     ggtitle(cond) + 
     scale_color_manual(values=c('#feb24c','#f03b20'))+
     labs(x="Thirds", y="Accuracy", colour="Block") + 
@@ -418,12 +426,18 @@ BlockNumAcc <- ddply(EncodeWithResp, c("Participant", "Block", "Condition", "Blo
                      IdealTrials=96,
                      SC=TotalBehTrials==IdealTrials)
 
+
 SummaryBlockNumAcc <- ddply(BlockNumAcc, c("Block", "Condition", "BlockNum"), SummaryData, "PercAcc")
-
 SummaryBlockNumAcc$BlockNum_Cond <- paste(SummaryBlockNumAcc$Block, SummaryBlockNumAcc$BlockNum, sep="_")
-
+SummaryBlockNumAcc$Condition <- factor(SummaryBlockNumAcc$Condition, 
+                                          levels=c("Old", "Similar_HI", "Similar_LI"), 
+                                          labels=c("Old", "Similar: HI", "Similar: LI"))
 SummaryBlockNumAcc$BlockNum_Cond <- factor(SummaryBlockNumAcc$BlockNum_Cond, 
-                                           levels=c("TR_TRFirst", "TI_TRFirst", "TI_TIFirst","TR_TIFirst"))
+                                           levels=c("TR_TRFirst", "TI_TRFirst", "TI_TIFirst","TR_TIFirst"),
+                                           labels=c("Regular First: Regular",
+                                                    "Regular First: Irregular",
+                                                    "Irregular First: Irregular",
+                                                    "Irregular First: Regular"))
 
 BlockNumBar <- ggplot(data=SummaryBlockNumAcc, aes(x=BlockNum_Cond, y=Mean, fill=Condition)) +
   stdbar +
