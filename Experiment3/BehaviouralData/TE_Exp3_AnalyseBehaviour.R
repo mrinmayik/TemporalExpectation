@@ -8,7 +8,8 @@ library(readr)
 
 ########################## Set Admin variables ##########################
 
-source("~/GitDir/GeneralScripts/InitialiseR/IntialiseGGPLOT.R")
+#Initialise basic stuff
+source("~/GitDir/GeneralScripts/InitialiseR/IntialiseAdminVar.R")
 
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/Experiment/"
 DataPath <- paste(BasePath, "Experiment3/Data/", sep = "")
@@ -65,7 +66,7 @@ for(Files in FileNames){
   
   EncodeLog <- PartData[-(sort(c(which(PartData$Picture=="TestFix"), (which(PartData$Picture=="TestFix")+1)))), ]
   EncodeLog <- EncodeLog[!(EncodeLog$Event %in% c("Response", "")), ]
-  if(!(print(nrow(EncodeLog==(192*2*2))))){
+  if(!(nrow(EncodeLog)==192*2*2)){
     stop
   }
   
@@ -77,9 +78,9 @@ for(Files in FileNames){
   EncodeLog$Discrepancy <- EncodeLog$Dur - EncodeLog$IdealTime
   
   if(!(all(grep("192", EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
-    stop(sprintf("Time discrepancy in CB%s", str_extract(Files, "[0-9][a-z]")))
+    print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9][a-z]")))
   }
-  sprintf("CB%s done!!", str_extract(Files, "[0-9][a-z]"))
+  print(sprintf("CB%s done!!", str_extract(Files, "[0-9][a-z]")))
 }
 
 #========================== Work with Log Data ends
@@ -87,6 +88,179 @@ for(Files in FileNames){
 
 
 #========================== Work with Encode Data ==========================
+
+#ListFiles
+FileNames <- list.files(path=DataPath, pattern="*Encode.txt",
+                        full.names=TRUE)
+
+ColOrd <- c("Participant", "ListAssignment", "ListType", "Thirds", "Set", "NumPres", "Trial", "Block", "Condition", "Category", 
+            "Items", "ISIType", "ISI", "Picture", "ObjectTime")
+
+
+EncodeData=c()
+#Read in data
+for(Files in FileNames){
+  PartData <- read_delim(Files, delim=";", skip=1, col_names=FALSE)
+  names(PartData) <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", 
+                       "ISIType", "Set", "Thirds", "NumPres", "Block", "ISI", "Picture", "ObjectTime")
+  PartID <- paste(strsplit(strsplit(Files, "//")[[1]][2], "_")[[1]][1:2], collapse="_")
+  PartData$Participant <- PartID
+  
+  #Read in CB
+  ThisCB <- read.csv(paste(CBPath, "CB_Encode_", paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
+  ThisCB <- merge(ThisCB, PartData, by=c("Trial", "Block"), all.x=TRUE, all.y=TRUE, suffixes=c("_CB", "_Data"))
+  
+  if(!(all(all(ThisCB$Picture_CB==ThisCB$Picture_Data) & 
+           all(ThisCB$Condition_CB==ThisCB$Condition_Data) & 
+           all(ThisCB$ISI_CB==ThisCB$ISI_Data)))){
+    stop(sprintf("Data  CB%s. INVESTIGATE!!!", PartID))
+  }
+  
+  EncodeData <- rbind(EncodeData, PartData[, ColOrd])
+}
+
+(EncodePerParticipant <- ddply(EncodeData, c("Participant", "Block"), summarise,
+                               Trials = length(Participant), 
+                               IdealTrials = 192,
+                               SC = Trials==IdealTrials))
+
+length(unique(EncodeData$Participant))
+(CheckTrials <- all(EncodePerParticipant$SC))
+CheckTrialNumbers(CheckTrials)
+
+#Add a column for trial duration
+EncodeData <- ddply(EncodeData, c("Participant", "Block"), AddTrialDur)
+EncodeData$IdealTrialDur <- EncodeData$ISI+1000
+#Check if that matches up with what it should be
+EncodeData$TimeDiscrepancy <- EncodeData$IdealTrialDur - EncodeData$TrialDur
+EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>(17*2)
+
+View(EncodeData[EncodeData$TimeProblem==TRUE,])
+#Any wrong times that aren't the last trial for a block?
+View(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==192)), ])
+
+toexclude <- c(toexclude, unique(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==192)), "Participant"]))
+
+EncodeData <- EncodeData[!(EncodeData$Participant %in% toexclude), ]
+
+#========================== Work with Encode Data Ends 
+
+
+
+#========================== Work with Test Data ==========================
+
+#ListFiles
+FileNames <- list.files(path=DataPath, pattern="*Test.txt",
+                        full.names=TRUE)
+
+ColdOrd <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
+             "Items", "ObjectTime", "Resp", "RespTime")
+
+TestData=c()
+#Read in data
+for(Files in FileNames){
+  PartData <- read_delim(Files, delim="\t", skip=0, col_names=TRUE)
+  
+#  #Coding this "absolutely" to make sure it's not removing any random trials
+#  if(all(PartData[143:144, "Items"]==PartData[145:146, "Items"])){
+#    #Are the answers to the repeated the same?
+#    SameResp <- cbind(SameResp, (PartData[143:144, "Resp"]==PartData[145:146, "Resp"]))
+#    #Is the response the second time around always new (because the object hadn't occurred in the corresponding block)?
+#    SecRespNew <- cbind(SecRespNew, PartData[145:146, "Resp"]==3)
+#    PartData <- PartData[-(145:146),]
+#  }
+  
+  PartID <- paste(strsplit(strsplit(Files, "//")[[1]][2], "_")[[1]][1:2], collapse="_")
+  PartData$Participant <- PartID
+  
+  #Read in CB
+  ThisCB <- read.csv(paste(CBPath, "CB_Test_", paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
+  ThisCB <- merge(ThisCB, PartData, by=c("Trial", "Block"), all.x=TRUE, all.y=TRUE, suffixes=c("_CB", "_Data"))
+  
+  if(!(all(all(ThisCB$Picture_CB==ThisCB$Picture_Data) & 
+           all(ThisCB$Condition_CB==ThisCB$Condition_Data) & 
+           all(ThisCB$ISI_CB==ThisCB$ISI_Data)))){
+    stop(sprintf("Data  CB%s. INVESTIGATE!!!", PartID))
+  }
+
+  TestData <- rbind(TestData, PartData[, ColdOrd])
+}
+
+(TestPerParticipant <- ddply(TestData, c("Participant", "Block"), summarise,
+                             Trials = length(Participant), 
+                             IdealTrials = 144,
+                             SC = Trials==IdealTrials))
+
+(CheckTrials <- all(TestPerParticipant$SC))
+CheckTrialNumbers(CheckTrials)
+
+#Exclude the problematic participants from test
+TestData <- TestData[!(TestData$Participant %in% toexclude), ]
+(CheckParts <- all(unique(TestData$Participant) %in% unique(EncodeData$Participant)))
+CheckTrialNumbers(CheckParts)
+
+#Just order the rows
+TestData <- TestData[order(TestData$Participant, TestData$Block, TestData$Trial), ]
+
+TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New"), labels=c(1, 2, 3))
+
+##### Look at accuracy
+TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New"), labels=c(1, 2, 3))
+#Are responses correct?
+TestData$Acc <- TestData$Resp==TestData$CorrCode
+
+(PartAcc <- ddply(TestData, c("Participant"), summarise, 
+                  BehAcc=sum(Acc), 
+                  BehNAcc=sum(!Acc),
+                  TotalBehTrials=sum(BehAcc, BehNAcc),
+                  IdealTrials=length(Participant),
+                  PercAcc=(BehAcc/TotalBehTrials)*100,
+                  SC=TotalBehTrials==IdealTrials))
+length(unique(PartAcc$Participant))
+
+TotalAcc <- SummaryData(PartAcc, "PercAcc")
+
+PartAcc$Exclude <- (PartAcc$PercAcc<=(TotalAcc$Mean-(2*TotalAcc$SD))) | (PartAcc$PercAcc>=(TotalAcc$Mean+(2*TotalAcc$SD)))
+toexclude <- c(toexclude, PartAcc[PartAcc$Exclude==TRUE, "Participant"])
+
+#Remove participants whose accuracy is too low or too high
+TestGoodData <- TestData[!(TestData$Participant %in% toexclude), ]
+unique(TestGoodData$Participant)
+length(unique(TestGoodData$Participant))
+
+#Collapse across trials
+TestAcc <- ddply(TestGoodData, c("Participant", "Block", "Condition"), summarise, 
+                 BehAcc=sum(Acc), 
+                 BehNAcc=sum(!Acc),
+                 TotalBehTrials=sum(BehAcc, BehNAcc),
+                 IdealTrials=length(Participant),
+                 PercAcc=(BehAcc/TotalBehTrials)*100,
+                 SC=TotalBehTrials==IdealTrials)
+(CheckSumTrials <- all(TestAcc$SC))
+(CheckOldNewTrials <- all(TestAcc[TestAcc$Condition %in% c("Old", "New"), "TotalBehTrials"]==48))
+(CheckSimTrials <- all(TestAcc[TestAcc$Condition %in% c("Similar_HI", "Similar_LI"), "TotalBehTrials"]==24))
+CheckTrialNumbers(c(CheckSumTrials, CheckOldNewTrials, CheckSimTrials))
+
+#Collapse across Participants
+SummaryTestAcc <- ddply(TestAcc, c("Block", "Condition"), SummaryData, "PercAcc")
+SummaryTestAcc$Block <- factor(SummaryTestAcc$Block, levels=c("TR", "TI"), labels=c("Regular", "Irregular"))
+SummaryTestAcc$Condition <- factor(SummaryTestAcc$Condition, 
+                                   levels=c("Old", "Similar_HI", "Similar_LI", "New"), 
+                                   labels=c("Old", "Similar: HI", "Similar: LI", "New"))
+
+TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Block, y=Mean, fill=Condition)) +
+  stdbar +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  scale_fill_manual(values=c("#00185C", "#D0902B", "#F1D4A6", "#CA2F2F"),
+                    breaks=c("Old", "Similar: HI", "Similar: LI", "New"), 
+                    labels=c("Old", "Similar: HI", "Similar: LI", "New")) + 
+  labs(x="Condition", y="Accuracy", fill="Object Type") + 
+  geom_hline(yintercept = 100/4, linetype="dashed", size=1) + 
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+
+
+
+
 
 
 
