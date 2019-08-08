@@ -11,7 +11,7 @@ library(ggplot2)
 
 ########################## Set Admin variables ##########################
 
-BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalAttention/Experiment/"
+BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/Experiment/"
 DataPath <- paste(BasePath, "Experiment2/Data/", sep = "")
 CBPath <- paste(BasePath, "Experiment1/Counterbalancing/", sep = "")
 
