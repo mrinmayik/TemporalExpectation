@@ -27,7 +27,7 @@ ListRot <- list("CondNames"=list("TR"=list("TR_Old", "TR_Similar", "TR_New"),
                 "CB6"=list("TR"=c(6, 1, 2),
                            "TI"=c(3, 4, 5)))
 
-BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalAttention/Experiment/Experiment1/"
+BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/Experiment/"
 
 
 ################################ Sanity check functions ################################
@@ -115,7 +115,7 @@ RandomiseTI <- function(df){
 ################################ Read in files ################################
 
 #Read in the master sheet that has all of the original details for how each participant should be organised
-MasterList <- read.xlsx(paste(BasePath, "Counterbalancing/Counterbalancing_MasterSheet.xlsx", sep=""), sheet="ListAssignment", 
+MasterList <- read.xlsx(paste(BasePath, "Experiment1/Counterbalancing/Counterbalancing_MasterSheet.xlsx", sep=""), sheet="ListAssignment", 
                         cols=1:3, colNames=TRUE)
 
 ColOrd <- c("Orig.Order", "Order_Assign.Conds", "Order_by.Run", "Condition", "List.ID", "SceneType", "Scene.ID", "RAND.Scene",
@@ -124,12 +124,12 @@ ColOrd <- c("Orig.Order", "Order_Assign.Conds", "Order_by.Run", "Condition", "Li
 
 
 
-ISIRotation <- read.xlsx(paste(BasePath, "Counterbalancing/Counterbalancing_MasterSheet.xlsx", sep=""), sheet="RotateISIAcrossParts", 
+ISIRotation <- read.xlsx(paste(BasePath, "Experiment1/Counterbalancing/Counterbalancing_MasterSheet.xlsx", sep=""), sheet="RotateISIAcrossParts", 
                          cols=1:8, rows=1:289, colNames=TRUE)
 
 
 #Change this to 1, 2, 3 and so on and so forth for different participants
-Part=9
+Part=3
 #This will alternate between a and b to yoke participants. So there will be 
 #a 1a, 1b, 2a, 2b and so on
 Ver="a"
@@ -137,7 +137,7 @@ Ver="a"
 #ISI Combination: Got from CounterbalancingMasterSheet (Sheet: ISIRotation). This is to make sure that not all participants
 #in the regular condition have the same ISI condition
 print("***********DID YOU CHANGE THE ISI COMBO?!?!?!?!***********")
-ISICombo <- c(500, 50, 1000, 2500)
+ISICombo <- c(50, 2500, 500, 1000)
 
 
 #Just get the conditions for each set for that particular participant
@@ -262,7 +262,7 @@ for(Cond in UseCondOrd){
     }
   }
   
-  FinalEncode[, "Picture"] <- paste(FinalEncode[, "Items"], "_1.png", sep="")
+  FinalEncode[, "Picture"] <- paste(FinalEncode[, "Items"], "_1", sep="")
   #Prepare some stuff for the corresponding testing session
   Similar_HI <- FinalEncode[FinalEncode$Condition=="Similar_HI", "Items"]
   Similar_LI <- FinalEncode[FinalEncode$Condition=="Similar_LI", "Items"]
@@ -322,10 +322,10 @@ for(Cond in UseCondOrd){
   #FinalTest[FinalTest$Condition=="New", c("ISIType", "Set", "ISI")] <- 0
   #FinalTest[, c("ISIType", "Set", "ISI")] <- 0
   
-  FinalTest[FinalTest$Condition=="Old", "Picture"] <- paste(FinalTest[FinalTest$Condition=="Old", "Items"], "_1.png", sep="")
-  FinalTest[FinalTest$Condition=="New", "Picture"] <- paste(FinalTest[FinalTest$Condition=="New", "Items"], "_1.png", sep="")
-  FinalTest[FinalTest$Condition=="Similar_HI", "Picture"] <- paste(FinalTest[FinalTest$Condition=="Similar_HI", "Items"], "_2.png", sep="")
-  FinalTest[FinalTest$Condition=="Similar_LI", "Picture"] <- paste(FinalTest[FinalTest$Condition=="Similar_LI", "Items"], "_3.png", sep="")
+  FinalTest[FinalTest$Condition=="Old", "Picture"] <- paste(FinalTest[FinalTest$Condition=="Old", "Items"], "_1", sep="")
+  FinalTest[FinalTest$Condition=="New", "Picture"] <- paste(FinalTest[FinalTest$Condition=="New", "Items"], "_1", sep="")
+  FinalTest[FinalTest$Condition=="Similar_HI", "Picture"] <- paste(FinalTest[FinalTest$Condition=="Similar_HI", "Items"], "_2", sep="")
+  FinalTest[FinalTest$Condition=="Similar_LI", "Picture"] <- paste(FinalTest[FinalTest$Condition=="Similar_LI", "Items"], "_3", sep="")
   FinalTest$Trial <- 1:nrow(FinalTest)
   
   
@@ -341,6 +341,8 @@ for(Cond in UseCondOrd){
 #writeData(OutSheet, sheet = paste(Cond, "_Encode", sep=""), x=FinalList)
 # Export the file
 #saveWorkbook(OutSheet, paste(BasePath, "CB", CB, "_", Ver, ".xlsx", sep=""))
+
+FinalCB_Encode$Trial <- c(1:192, 1:192)
 
 if(Save==1){
   write.csv(FinalCB_Encode, file = paste(BasePath, "CB_Encode_", Part, "a.csv", sep=""), row.names=FALSE)
@@ -358,10 +360,11 @@ FinalCB_Test_Yoked$Condition <- factor(FinalCB_Test_Yoked$Condition,
                                        levels=c("Old", "Similar_HI", "Similar_LI", "New"), 
                                        labels=c("Old", "Similar_LI", "Similar_HI", "New"))
 
-FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Old", "Picture"] <- paste(FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Old", "Items"], "_1.png", sep="")
-FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="New", "Picture"] <- paste(FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="New", "Items"], "_1.png", sep="")
-FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Similar_HI", "Picture"] <- paste(FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Similar_HI", "Items"], "_2.png", sep="")
-FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Similar_LI", "Picture"] <- paste(FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Similar_LI", "Items"], "_3.png", sep="")
+FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Old", "Picture"] <- paste(FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Old", "Items"], "_1", sep="")
+FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="New", "Picture"] <- paste(FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="New", "Items"], "_1", sep="")
+FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Similar_HI", "Picture"] <- paste(FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Similar_HI", "Items"], "_2", sep="")
+FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Similar_LI", "Picture"] <- paste(FinalCB_Test_Yoked[FinalCB_Test_Yoked$Condition=="Similar_LI", "Items"], "_3", sep="")
+
 if(Save==1){
   write.csv(FinalCB_Encode_Yoked, file = paste(BasePath, "CB_Encode_", Part, "b.csv", sep=""), row.names=FALSE)
   write.csv(FinalCB_Test_Yoked, file = paste(BasePath, "CB_Test_", Part, "b.csv", sep=""), row.names=FALSE)
