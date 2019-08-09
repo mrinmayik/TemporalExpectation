@@ -17,6 +17,11 @@ CBPath <- paste(BasePath, "Experiment3/Counterbalancing/", sep = "")
 
 NumBlocks <- 2
 
+FactorLabels <- list("Block" = list("levels"=c("TR", "TI"), 
+                                    "labels"=c("Regular", "Irregular")),
+                     "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
+                                        "labels"=c("Old", "Similar: HI", "Similar: LI", "New")))
+
 toexclude <- c()
 
 ########################## Functions ##########################
@@ -61,26 +66,38 @@ LogData=c()
 #Read in data
 for(Files in FileNames){
   #[, ColOrd] Orders the columns to put the rando columns at the end of the df
+  #Read in file and only keep first 5 columns
   PartData <- read.table(Files, skip=6, sep="\t", blank.lines.skip=TRUE, header=FALSE, fill=TRUE)[, 1:5]
   PartData <- PartData %>% dplyr::rename(Participant=V1, Trial=V2, Event=V3, Picture=V4, Time=V5)
   
+  #Get rid of the the the test trials to check times. The code was TestFix. and then get rid of one trial after that (the picture)...
   EncodeLog <- PartData[-(sort(c(which(PartData$Picture=="TestFix"), (which(PartData$Picture=="TestFix")+1)))), ]
+  #...And any trial where a response was made
   EncodeLog <- EncodeLog[!(EncodeLog$Event %in% c("Response", "")), ]
+  #This should leave us with only the encode trials 192*2*2= 192 trials* 2 blocks * 2 rows per trial (Fix+object)
+  #If this is not correct halt the execution
   if(!(nrow(EncodeLog)==192*2*2)){
-    stop
+    stop(sprintf("Row numbers don't add up for %s!!", str_extract(Files, "[0-9][a-z]_[0-9]")))
   }
   
+  #In the object rows add 1000 because the object was always up for 1s
+  #The fixation row has the code with all the information from the datasource. So anything WITHOUT ; is the object row
   EncodeLog[-(grep(";", EncodeLog$Picture)), "IdealTime"] <- 1000
+  #Read in the CB sheet to get time of actual ISIs
   ThisCB <- read.csv(paste(CBPath, "CB_Encode_", str_extract(Files, "[0-9][a-z]"), ".csv", sep=""))
+  ##Add time from CB to the rows with fixation
   EncodeLog[grep(";", EncodeLog$Picture), "IdealTime"] <- ThisCB$ISI
   
+  #Calculate the time difference. /10 because log files give times in microseconds
   EncodeLog$Dur <- c((diff(EncodeLog$Time))/10, 0)
   EncodeLog$Discrepancy <- EncodeLog$Dur - EncodeLog$IdealTime
   
+  #Print warning if there is a discrepancy in any trial that isn't the last trial of the block.
+  #The last trial should have 192 as trial number in the event code
   if(!(all(grep("192", EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
-    print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9][a-z]")))
+    print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9][a-z]_[0-9]")))
   }
-  print(sprintf("CB%s done!!", str_extract(Files, "[0-9][a-z]")))
+  print(sprintf("CB%s done!!", str_extract(Files, "[0-9][a-z]_[0-9]")))
 }
 
 #========================== Work with Log Data ends
@@ -108,17 +125,20 @@ for(Files in FileNames){
   
   #Read in CB
   ThisCB <- read.csv(paste(CBPath, "CB_Encode_", paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
+  #Merge with data
   ThisCB <- merge(ThisCB, PartData, by=c("Trial", "Block"), all.x=TRUE, all.y=TRUE, suffixes=c("_CB", "_Data"))
   
+  #Make sure all the information between what is presented and what was supposed to be presented matches up
+  #This is just to make sure the changing the name of CB as TE_Encode.txt and TE_Test.txt didn't screw anything up
   if(!(all(all(ThisCB$Picture_CB==ThisCB$Picture_Data) & 
            all(ThisCB$Condition_CB==ThisCB$Condition_Data) & 
            all(ThisCB$ISI_CB==ThisCB$ISI_Data)))){
-    stop(sprintf("Data  CB%s. INVESTIGATE!!!", PartID))
+    stop(sprintf("Data does not match up with CB in %s. INVESTIGATE!!!", PartID))
   }
-  
   EncodeData <- rbind(EncodeData, PartData[, ColOrd])
 }
 
+#Make sure the right number of trials are present for everyone
 (EncodePerParticipant <- ddply(EncodeData, c("Participant", "Block"), summarise,
                                Trials = length(Participant), 
                                IdealTrials = 192,
@@ -138,7 +158,7 @@ EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>(17*2)
 View(EncodeData[EncodeData$TimeProblem==TRUE,])
 #Any wrong times that aren't the last trial for a block?
 View(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==192)), ])
-
+#Get rid of participants that are problematic in terms of timing
 toexclude <- c(toexclude, unique(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==192)), "Participant"]))
 
 EncodeData <- EncodeData[!(EncodeData$Participant %in% toexclude), ]
@@ -177,10 +197,12 @@ for(Files in FileNames){
   ThisCB <- read.csv(paste(CBPath, "CB_Test_", paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
   ThisCB <- merge(ThisCB, PartData, by=c("Trial", "Block"), all.x=TRUE, all.y=TRUE, suffixes=c("_CB", "_Data"))
   
+  #Make sure all the information between what is presented and what was supposed to be presented matches up
+  #This is just to make sure the changing the name of CB as TE_Encode.txt and TE_Test.txt didn't screw anything up
   if(!(all(all(ThisCB$Picture_CB==ThisCB$Picture_Data) & 
            all(ThisCB$Condition_CB==ThisCB$Condition_Data) & 
            all(ThisCB$ISI_CB==ThisCB$ISI_Data)))){
-    stop(sprintf("Data  CB%s. INVESTIGATE!!!", PartID))
+    stop(sprintf("Data does not match up with CB in %s. INVESTIGATE!!!", PartID))
   }
 
   TestData <- rbind(TestData, PartData[, ColdOrd])
@@ -201,7 +223,7 @@ CheckTrialNumbers(CheckParts)
 
 #Just order the rows
 TestData <- TestData[order(TestData$Participant, TestData$Block, TestData$Trial), ]
-
+#Get the codes of what the correct answer should be
 TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New"), labels=c(1, 2, 3))
 
 ##### Look at accuracy
@@ -243,10 +265,10 @@ CheckTrialNumbers(c(CheckSumTrials, CheckOldNewTrials, CheckSimTrials))
 
 #Collapse across Participants
 SummaryTestAcc <- ddply(TestAcc, c("Block", "Condition"), SummaryData, "PercAcc")
-SummaryTestAcc$Block <- factor(SummaryTestAcc$Block, levels=c("TR", "TI"), labels=c("Regular", "Irregular"))
+SummaryTestAcc$Block <- factor(SummaryTestAcc$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
 SummaryTestAcc$Condition <- factor(SummaryTestAcc$Condition, 
-                                   levels=c("Old", "Similar_HI", "Similar_LI", "New"), 
-                                   labels=c("Old", "Similar: HI", "Similar: LI", "New"))
+                                   levels=FactorLabels$Condition$levels, 
+                                   labels=FactorLabels$Condition$labels)
 
 TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Block, y=Mean, fill=Condition)) +
   stdbar +
