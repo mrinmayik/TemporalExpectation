@@ -5,6 +5,7 @@
 
 library(reshape)
 library(readr)
+library(stringr)
 
 ########################## Set Admin variables ##########################
 
@@ -70,10 +71,11 @@ for(Files in FileNames){
   PartData <- read.table(Files, skip=6, sep="\t", blank.lines.skip=TRUE, header=FALSE, fill=TRUE)[, 1:5]
   PartData <- PartData %>% dplyr::rename(Participant=V1, Trial=V2, Event=V3, Picture=V4, Time=V5)
   
-  #Get rid of the the the test trials to check times. The code was TestFix. and then get rid of one trial after that (the picture)...
-  EncodeLog <- PartData[-(sort(c(which(PartData$Picture=="TestFix"), (which(PartData$Picture=="TestFix")+1)))), ]
-  #...And any trial where a response was made
-  EncodeLog <- EncodeLog[!(EncodeLog$Event %in% c("Response", "")), ]
+  #Get rid of the trials where a response was made...
+  EncodeLog <- PartData[!(PartData$Event %in% c("Response", "")), ]
+  #...And any test trials to check times. The code was TestFix. and then get rid of one trial after that (the picture)
+  EncodeLog <- EncodeLog[-(sort(c(which(EncodeLog$Picture=="TestFix"), (which(EncodeLog$Picture=="TestFix")+1)))), ]
+  
   #This should leave us with only the encode trials 192*2*2= 192 trials* 2 blocks * 2 rows per trial (Fix+object)
   #If this is not correct halt the execution
   if(!(nrow(EncodeLog)==192*2*2)){
@@ -179,7 +181,7 @@ ColdOrd <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "
 TestData=c()
 #Read in data
 for(Files in FileNames){
-  PartData <- read_delim(Files, delim="\t", skip=0, col_names=TRUE)
+  PartData <- read_delim(Files, delim=";", skip=0, col_names=TRUE)
   
 #  #Coding this "absolutely" to make sure it's not removing any random trials
 #  if(all(PartData[143:144, "Items"]==PartData[145:146, "Items"])){
