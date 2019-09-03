@@ -129,7 +129,7 @@ ISIRotation <- read.xlsx(paste(BasePath, "Experiment1/Counterbalancing/Counterba
 
 
 #Change this to 1, 2, 3 and so on and so forth for different participants
-Part=3
+Part=5
 #This will alternate between a and b to yoke participants. So there will be 
 #a 1a, 1b, 2a, 2b and so on
 Ver="a"
@@ -137,7 +137,7 @@ Ver="a"
 #ISI Combination: Got from CounterbalancingMasterSheet (Sheet: ISIRotation). This is to make sure that not all participants
 #in the regular condition have the same ISI condition
 print("***********DID YOU CHANGE THE ISI COMBO?!?!?!?!***********")
-ISICombo <- c(50, 2500, 500, 1000)
+ISICombo <- c(50, 1000, 500, 2500)
 
 
 #Just get the conditions for each set for that particular participant
