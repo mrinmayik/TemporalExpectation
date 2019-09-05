@@ -30,6 +30,7 @@ ListRot <- list("CondNames"=list("TR"=list("TR_Old", "TR_Similar", "TR_New"),
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/Experiment/"
 
 
+
 ################################ Sanity check functions ################################
 #Make sure that conditions and categories are evenly spread out across sets. To make sure that not all
 #4 objects in a set are eventually in the Similar condition, or that not all of the objects are Tools 
@@ -79,9 +80,9 @@ CheckRepetitions <- function(df){
 }
 
 #Randomise ISIs in the TI block either similar to Thavabalasingham et al., 2017 or like Debbie's suggestion
-RandomiseTI <- function(df){
-  #Some juggad required here. We want to make sure the subsequent presentations of the TI objects are paired with
-  #opposirt ISIs. Since we're now changing around the order of the ISIs (See ISICombo variable), we no longer know
+RandomiseTI <- function(df, TIType){
+  #Some jugaad required here. We want to make sure the subsequent presentations of the TI objects are paired with
+  #opposite ISIs. Since we're now changing around the order of the ISIs (See ISICombo variable), we no longer know
   #which are the shortest and longest ISIs
   ShortISI <- order(ISICombo)[1:2]
   LongISI <- order(ISICombo)[3:4]
@@ -91,23 +92,34 @@ RandomiseTI <- function(df){
   #df[5:8, "ISIType"] <- sample(4)
   
   ##### Use this if you want to randomise the TI block exactly like in Thavabalasingham et al., 2017 like 
-  #MeanISI <- c(500, 2500, 1000, 50)
-  #SDISI <- c(80, 80, 80, 20)
-  
-  #Set ISIs
-  #for(i in 1:8){
-  #  df[i, "ISI"] <- abs(rnorm(1, mean=MeanISI[df[i, "ISIType"]], sd=MeanISI[df[i, "ISIType"]]))
-  #}
-  
+  if(TIType=="Rand"){
+    MeanISI <- ISICombo #jittered around whatever is the ISIcombo for this participant
+    SDISI <- c(TIJitters[[as.character(MeanISI[1])]],
+               TIJitters[[as.character(MeanISI[2])]],
+               TIJitters[[as.character(MeanISI[3])]],
+               TIJitters[[as.character(MeanISI[4])]])
+    
+    RandISI <- c(0, 0, 0, 0)
+    #Set ISIs. Just make sure a negative ISI isn't returned
+    while(any(RandISI<=0)){
+      for(i in 1:4){
+        RandISI[i] <- round(rnorm(1, mean=MeanISI[df[i, "ISIType"]], sd=SDISI[df[i, "ISIType"]]), digits=0)
+      }
+    }
+    df[1:4, "ISI"] <- RandISI
+    df[5:8, "ISI"] <- RandISI[sample(4)]
+  }
   ##### For the time being, using the Debbie version where the trials in a set that were short ISIs in
   ##### the first presentation, should become the long ISIs in the second presentation 
-  df[which(row.names(df)==5:8 & df[1:4, "ISIType"] %in% ShortISI), "ISIType"] <- LongISI[sample(1:2)]
-  df[which(row.names(df)==5:8 & df[1:4, "ISIType"] %in% LongISI), "ISIType"] <- ShortISI[sample(1:2)]
-  
-  df[df$ISIType==1, "ISI"] <- ISICombo[1]
-  df[df$ISIType==2, "ISI"] <- ISICombo[2]
-  df[df$ISIType==3, "ISI"] <- ISICombo[3]
-  df[df$ISIType==4, "ISI"] <- ISICombo[4]
+  else if(TIType=="Shuffle"){
+    df[which(row.names(df)==5:8 & df[1:4, "ISIType"] %in% ShortISI), "ISIType"] <- LongISI[sample(1:2)]
+    df[which(row.names(df)==5:8 & df[1:4, "ISIType"] %in% LongISI), "ISIType"] <- ShortISI[sample(1:2)]
+    
+    df[df$ISIType==1, "ISI"] <- ISICombo[1]
+    df[df$ISIType==2, "ISI"] <- ISICombo[2]
+    df[df$ISIType==3, "ISI"] <- ISICombo[3]
+    df[df$ISIType==4, "ISI"] <- ISICombo[4]
+  }
   return(df)
 }
 
@@ -122,22 +134,35 @@ ColOrd <- c("Orig.Order", "Order_Assign.Conds", "Order_by.Run", "Condition", "Li
             "Object", "ENC.Run", "AssociatePosition", "TestRun")
 
 
-
-
 ISIRotation <- read.xlsx(paste(BasePath, "Experiment1/Counterbalancing/Counterbalancing_MasterSheet.xlsx", sep=""), sheet="RotateISIAcrossParts", 
                          cols=1:8, rows=1:289, colNames=TRUE)
 
 
 #Change this to 1, 2, 3 and so on and so forth for different participants
-Part=5
+Part=1
 #This will alternate between a and b to yoke participants. So there will be 
 #a 1a, 1b, 2a, 2b and so on
 Ver="a"
 
-#ISI Combination: Got from CounterbalancingMasterSheet (Sheet: ISIRotation). This is to make sure that not all participants
-#in the regular condition have the same ISI condition
-print("***********DID YOU CHANGE THE ISI COMBO?!?!?!?!***********")
-ISICombo <- c(50, 1000, 500, 2500)
+#Figure out how ITIs will be randomised based on which experiment we're on
+Experiment=4
+if(Experiment==4){
+  TIMethod = "Rand"
+  TIJitters <- list("100" = 40,
+                    "500" = 80,
+                    "1000" = 80,
+                    "2000" = 80)
+  #ISI Combination: Got from CounterbalancingMasterSheet (Sheet: ISIRotation). This is to make sure that not all participants
+  #in the regular condition have the same ISI combination
+  print("***********DID YOU CHANGE THE ISI COMBO?!?!?!?!***********")
+  ISICombo <- c(100, 1000, 2000, 500)
+} else if(Experiment %in% 1:3) {
+  TIMethod = "Shuffle"
+  #ISI Combination: Got from CounterbalancingMasterSheet (Sheet: ISIRotation). This is to make sure that not all participants
+  #in the regular condition have the same ISI combination
+  print("***********DID YOU CHANGE THE ISI COMBO?!?!?!?!***********")
+  ISICombo <- c(50, 1000, 500, 2500)
+}
 
 
 #Just get the conditions for each set for that particular participant
@@ -256,7 +281,7 @@ for(Cond in UseCondOrd){
   else if (Cond=="TI"){
     DoAgainTI <- 1
     while(DoAgainTI>0){
-      FinalEncode <- ddply(FinalEncode, c("Set"), RandomiseTI)
+      FinalEncode <- ddply(FinalEncode, c("Set"), RandomiseTI, TIMethod)
       CheckListTI <- CheckCB(FinalEncode, 2)[[2]]
       DoAgainTI <- CheckCB(FinalEncode, 2)[[1]]
     }
