@@ -276,13 +276,36 @@ TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Block, y=Mean, fill=Condition)) 
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#00185C", "#D0902B", "#F1D4A6", "#CA2F2F"),
-                    breaks=c("Old", "Similar: HI", "Similar: LI", "New"), 
-                    labels=c("Old", "Similar: HI", "Similar: LI", "New")) + 
+                    breaks=FactorLabels$Condition$labels, 
+                    labels=FactorLabels$Condition$labels) + 
   labs(x="Condition", y="Accuracy", fill="Object Type") + 
   geom_hline(yintercept = 100/4, linetype="dashed", size=1) + 
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
+##### Look at RT now
 
+unique(TestData$Participant)
+length(unique(TestData$Participant))
+
+#Calculate RT
+TestData$RT <- TestData$RespTime-TestData$ObjectTime
+#Collapse RT across trials
+TestRT <- ddply(TestData, c("Participant", "Block", "Condition"), SummaryData, "RT")
+#Collapse across participants
+SummaryTestRT <- ddply(TestRT, c("Block", "Condition"), SummaryData, "Mean")
+SummaryTestRT$Block <- factor(SummaryTestRT$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
+SummaryTestRT$Condition <- factor(SummaryTestRT$Condition, 
+                                   levels=FactorLabels$Condition$levels, 
+                                   labels=FactorLabels$Condition$labels)
+
+TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Block, y=Mean, fill=Condition)) +
+  stdbar +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  scale_fill_manual(values=c("#00185C", "#D0902B", "#F1D4A6", "#CA2F2F"),
+                    breaks=FactorLabels$Condition$labels, 
+                    labels=FactorLabels$Condition$labels) + 
+  labs(x="Condition", y="RT", fill="Object Type") +
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
 
 
