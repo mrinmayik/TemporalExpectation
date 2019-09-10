@@ -118,7 +118,7 @@ EncodeData$IdealTrialDur <- EncodeData$ISI+1000
 EncodeData$TimeDiscrepancy <- EncodeData$IdealTrialDur - EncodeData$TrialDur
 EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>70
 
-View(EncodeData[EncodeData$TimeProblem==TRUE,])
+#View(EncodeData[EncodeData$TimeProblem==TRUE,])
 #Any wrong times that aren't the last trial for a block?
 View(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial %in% c(192, 384))), ])
 
