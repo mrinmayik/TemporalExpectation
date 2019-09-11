@@ -1,6 +1,7 @@
 library(openxlsx)
 library(reshape)
 library(plyr)
+#library(dplyr)
 
 ########################## Set Admin variables ##########################
 
@@ -36,18 +37,18 @@ BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/E
 #4 objects in a set are eventually in the Similar condition, or that not all of the objects are Tools 
 #etc.
 CountRows <- function(df, Col){
-  count(df[, Col])
+  dplyr::count(df, Col)
 }
 CheckCB <- function(df=NULL, Build=1) {
   if(Build==1){ #This is initially building the CB
     Check <- list()
     Checked <- 0
     #Condition per ISI is also controlled in the excel sheet
-    Check$CatPerISI <- ddply(df, c("ISIType"), CountRows, "Category")
-    Check$CatPerSet <- ddply(df, c("Set"), CountRows, "Category")
-    Check$CondPerSet <- ddply(df, c("Set"), CountRows, "Condition")
-    Check$OldPerThirds <- ddply(df[df$Condition=="Old",], c("Thirds"), CountRows, "Condition")
-    Check$SimPerThirds <- ddply(df[df$ListType=="Similar",], c("Thirds"), CountRows, "Condition")
+    Check$CatPerISI <- ddply(df, c("ISIType"), count, "Category")
+    Check$CatPerSet <- ddply(df, c("Set"), count, "Category")
+    Check$CondPerSet <- ddply(df, c("Set"), count, "Condition")
+    Check$OldPerThirds <- ddply(df[df$Condition=="Old",], c("Thirds"), count, "Condition")
+    Check$SimPerThirds <- ddply(df[df$ListType=="Similar",], c("Thirds"), count, "Condition")
     Checked <- ifelse(any(any(Check$CatPerISI$freq>5),
                           any(Check$CatPerSet$freq>=4),
                           any(Check$CondPerSet$freq>=4),
@@ -60,7 +61,7 @@ CheckCB <- function(df=NULL, Build=1) {
     CheckTIISI <- list()
     CheckedTIISI <- 0
     df <- df[df$NumPres==1,]
-    CheckTIISI$CondPerISI <- ddply(df, c("ISI"), CountRows, "Condition")
+    CheckTIISI$CondPerISI <- ddply(df, c("ISI"), count, "Condition")
     CheckedTIISI <- ifelse(any(any(CheckTIISI$CondPerISI$freq>=13)), 1, 0)
     return(list(CheckedTIISI, CheckTIISI))
   }
