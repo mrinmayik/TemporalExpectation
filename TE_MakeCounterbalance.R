@@ -8,7 +8,7 @@ library(plyr)
 #What all to do right now
 Make=1
 Check=0
-Save=0
+Save=1
 FinalCB <- data.frame()
 
 
@@ -37,18 +37,18 @@ BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/E
 #4 objects in a set are eventually in the Similar condition, or that not all of the objects are Tools 
 #etc.
 CountRows <- function(df, Col){
-  dplyr::count(df, Col)
+  count(df[, Col])
 }
 CheckCB <- function(df=NULL, Build=1) {
   if(Build==1){ #This is initially building the CB
     Check <- list()
     Checked <- 0
     #Condition per ISI is also controlled in the excel sheet
-    Check$CatPerISI <- ddply(df, c("ISIType"), count, "Category")
-    Check$CatPerSet <- ddply(df, c("Set"), count, "Category")
-    Check$CondPerSet <- ddply(df, c("Set"), count, "Condition")
-    Check$OldPerThirds <- ddply(df[df$Condition=="Old",], c("Thirds"), count, "Condition")
-    Check$SimPerThirds <- ddply(df[df$ListType=="Similar",], c("Thirds"), count, "Condition")
+    Check$CatPerISI <- ddply(df, c("ISIType"), CountRows, "Category")
+    Check$CatPerSet <- ddply(df, c("Set"), CountRows, "Category")
+    Check$CondPerSet <- ddply(df, c("Set"), CountRows, "Condition")
+    Check$OldPerThirds <- ddply(df[df$Condition=="Old",], c("Thirds"), CountRows, "Condition")
+    Check$SimPerThirds <- ddply(df[df$ListType=="Similar",], c("Thirds"), CountRows, "Condition")
     Checked <- ifelse(any(any(Check$CatPerISI$freq>5),
                           any(Check$CatPerSet$freq>=4),
                           any(Check$CondPerSet$freq>=4),
@@ -140,13 +140,13 @@ ISIRotation <- read.xlsx(paste(BasePath, "Experiment1/Counterbalancing/Counterba
 
 
 #Change this to 1, 2, 3 and so on and so forth for different participants
-Part=1
+Part=8
 #This will alternate between a and b to yoke participants. So there will be 
 #a 1a, 1b, 2a, 2b and so on
 Ver="a"
 
 #Figure out how ITIs will be randomised based on which experiment we're on
-Experiment=4
+Experiment=3
 if(Experiment==4){
   TIMethod = "Rand"
   TIJitters <- list("100" = 40,
@@ -162,7 +162,7 @@ if(Experiment==4){
   #ISI Combination: Got from CounterbalancingMasterSheet (Sheet: ISIRotation). This is to make sure that not all participants
   #in the regular condition have the same ISI combination
   print("***********DID YOU CHANGE THE ISI COMBO?!?!?!?!***********")
-  ISICombo <- c(50, 1000, 500, 2500)
+  ISICombo <- c(500, 50, 2500, 1000)
 }
 
 
