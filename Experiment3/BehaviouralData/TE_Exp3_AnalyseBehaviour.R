@@ -10,7 +10,7 @@ library(stringr)
 ########################## Set Admin variables ##########################
 
 #Initialise basic stuff
-source("~/GitDir/GeneralScripts/InitialiseR/IntialiseAdminVar.R")
+source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/Experiment/"
 DataPath <- paste(BasePath, "Experiment3/Data/", sep = "")
