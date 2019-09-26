@@ -102,7 +102,7 @@ RandomiseTI <- function(df, TIType){
     
     RandISI <- c(0, 0, 0, 0)
     #Set ISIs. Just make sure a negative ISI isn't returned
-    while(any(RandISI<=0)){
+    while(any(RandISI<=17)){
       for(i in 1:4){
         RandISI[i] <- round(rnorm(1, mean=MeanISI[df[i, "ISIType"]], sd=SDISI[df[i, "ISIType"]]), digits=0)
       }
@@ -134,19 +134,20 @@ MasterList <- read.xlsx(paste(BasePath, "Experiment1/Counterbalancing/Counterbal
 ColOrd <- c("Orig.Order", "Order_Assign.Conds", "Order_by.Run", "Condition", "List.ID", "SceneType", "Scene.ID", "RAND.Scene",
             "Object", "ENC.Run", "AssociatePosition", "TestRun")
 
-
 ISIRotation <- read.xlsx(paste(BasePath, "Experiment1/Counterbalancing/Counterbalancing_MasterSheet.xlsx", sep=""), sheet="RotateISIAcrossParts", 
                          cols=1:8, rows=1:289, colNames=TRUE)
 
+ISIComboDict <- read.xlsx(paste(BasePath, "Experiment1/Counterbalancing/Counterbalancing_MasterSheet.xlsx", sep=""), sheet="ISIRotation", 
+                          cols=1:5, rows=28:52, colNames=TRUE)
 
 #Change this to 1, 2, 3 and so on and so forth for different participants
-Part=8
+Part=1
 #This will alternate between a and b to yoke participants. So there will be 
 #a 1a, 1b, 2a, 2b and so on
 Ver="a"
 
 #Figure out how ITIs will be randomised based on which experiment we're on
-Experiment=3
+Experiment=4
 if(Experiment==4){
   TIMethod = "Rand"
   TIJitters <- list("100" = 40,
@@ -156,13 +157,14 @@ if(Experiment==4){
   #ISI Combination: Got from CounterbalancingMasterSheet (Sheet: ISIRotation). This is to make sure that not all participants
   #in the regular condition have the same ISI combination
   print("***********DID YOU CHANGE THE ISI COMBO?!?!?!?!***********")
-  ISICombo <- c(100, 1000, 2000, 500)
+  #ISICombo <- c(100, 1000, 2000, 500)
+  ISICombo <- unlist(list(ISIComboDict[ISIComboDict$Participant==Part, c("1stDelay", "2ndDelay", "3rdDelay", "4thDelay")]))
 } else if(Experiment %in% 1:3) {
   TIMethod = "Shuffle"
   #ISI Combination: Got from CounterbalancingMasterSheet (Sheet: ISIRotation). This is to make sure that not all participants
   #in the regular condition have the same ISI combination
   print("***********DID YOU CHANGE THE ISI COMBO?!?!?!?!***********")
-  ISICombo <- c(500, 50, 2500, 1000)
+  ISICombo <- c(500, 2500, 50, 1000)
 }
 
 
