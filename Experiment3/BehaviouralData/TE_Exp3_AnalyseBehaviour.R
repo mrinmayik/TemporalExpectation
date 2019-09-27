@@ -13,8 +13,8 @@ library(stringr)
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/Experiment/"
-DataPath <- paste(BasePath, "Experiment4/Data/", sep = "")
-CBPath <- paste(BasePath, "Experiment4/Counterbalancing/", sep = "")
+DataPath <- paste(BasePath, "Experiment3/Data/", sep = "")
+CBPath <- paste(BasePath, "Experiment3/Counterbalancing/", sep = "")
 
 NumBlocks <- 2
 
