@@ -13,8 +13,8 @@ library(stringr)
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/Experiment/"
-DataPath <- paste(BasePath, "Experiment3/Data/", sep = "")
-CBPath <- paste(BasePath, "Experiment3/Counterbalancing/", sep = "")
+DataPath <- paste(BasePath, "Experiment4/Data/", sep = "")
+CBPath <- paste(BasePath, "Experiment4/Counterbalancing/", sep = "")
 
 NumBlocks <- 2
 
@@ -79,14 +79,14 @@ for(Files in FileNames){
   #This should leave us with only the encode trials 192*2*2= 192 trials* 2 blocks * 2 rows per trial (Fix+object)
   #If this is not correct halt the execution
   if(!(nrow(EncodeLog)==192*2*2)){
-    stop(sprintf("Row numbers don't add up for %s!!", str_extract(Files, "[0-9][a-z]_[0-9]")))
+    stop(sprintf("Row numbers don't add up for %s!!", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
   }
   
   #In the object rows add 1000 because the object was always up for 1s
   #The fixation row has the code with all the information from the datasource. So anything WITHOUT ; is the object row
   EncodeLog[-(grep(";", EncodeLog$Picture)), "IdealTime"] <- 1000
   #Read in the CB sheet to get time of actual ISIs
-  ThisCB <- read.csv(paste(CBPath, "CB_Encode_", str_extract(Files, "[0-9][a-z]"), ".csv", sep=""))
+  ThisCB <- read.csv(paste(CBPath, "CB_Encode_", str_extract(Files, "[0-9]?[0-9][a-z]"), ".csv", sep=""))
   ##Add time from CB to the rows with fixation
   EncodeLog[grep(";", EncodeLog$Picture), "IdealTime"] <- ThisCB$ISI
   
@@ -97,9 +97,9 @@ for(Files in FileNames){
   #Print warning if there is a discrepancy in any trial that isn't the last trial of the block.
   #The last trial should have 192 as trial number in the event code
   if(!(all(grep("192", EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
-    print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9][a-z]_[0-9]")))
+    print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
   }
-  print(sprintf("CB%s done!!", str_extract(Files, "[0-9][a-z]_[0-9]")))
+  print(sprintf("CB%s done!!", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
 }
 
 #========================== Work with Log Data ends
@@ -124,9 +124,10 @@ for(Files in FileNames){
                        "ISIType", "Set", "Thirds", "NumPres", "Block", "ISI", "Picture", "ObjectTime")
   PartID <- paste(strsplit(strsplit(Files, "//")[[1]][2], "_")[[1]][1:2], collapse="_")
   PartData$Participant <- PartID
+  CBName <- str_extract(PartID, "[0-9]?[0-9][a-z]")
   
   #Read in CB
-  ThisCB <- read.csv(paste(CBPath, "CB_Encode_", paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
+  ThisCB <- read.csv(paste(CBPath, "CB_Encode_", paste(CBName, collapse=""), ".csv", sep=""))
   #Merge with data
   ThisCB <- merge(ThisCB, PartData, by=c("Trial", "Block"), all.x=TRUE, all.y=TRUE, suffixes=c("_CB", "_Data"))
   
@@ -194,9 +195,10 @@ for(Files in FileNames){
   
   PartID <- paste(strsplit(strsplit(Files, "//")[[1]][2], "_")[[1]][1:2], collapse="_")
   PartData$Participant <- PartID
+  CBName <- str_extract(PartID, "[0-9]?[0-9][a-z]")
   
   #Read in CB
-  ThisCB <- read.csv(paste(CBPath, "CB_Test_", paste(strsplit(PartID, "")[[1]][3:4], collapse=""), ".csv", sep=""))
+  ThisCB <- read.csv(paste(CBPath, "CB_Test_", CBName, ".csv", sep=""))
   ThisCB <- merge(ThisCB, PartData, by=c("Trial", "Block"), all.x=TRUE, all.y=TRUE, suffixes=c("_CB", "_Data"))
   
   #Make sure all the information between what is presented and what was supposed to be presented matches up
