@@ -84,7 +84,7 @@ for(Files in FileNames){
   
   #In the object rows add 1000 because the object was always up for 1s
   #The fixation row has the code with all the information from the datasource. So anything WITHOUT ; is the object row
-  EncodeLog[-(grep(";", EncodeLog$Picture)), "IdealTime"] <- 1000
+  EncodeLog[-(grep(";", EncodeLog$Picture)), "IdealTime"] <- 500
   #Read in the CB sheet to get time of actual ISIs
   ThisCB <- read.csv(paste(CBPath, "CB_Encode_", str_extract(Files, "[0-9]?[0-9][a-z]"), ".csv", sep=""))
   ##Add time from CB to the rows with fixation
@@ -153,7 +153,7 @@ CheckTrialNumbers(CheckTrials)
 
 #Add a column for trial duration
 EncodeData <- ddply(EncodeData, c("Participant", "Block"), AddTrialDur)
-EncodeData$IdealTrialDur <- EncodeData$ISI+1000
+EncodeData$IdealTrialDur <- EncodeData$ISI+500
 #Check if that matches up with what it should be
 EncodeData$TimeDiscrepancy <- EncodeData$IdealTrialDur - EncodeData$TrialDur
 EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>(17*2)
