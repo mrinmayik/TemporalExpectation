@@ -336,15 +336,19 @@ CheckTrialNumbers(CheckTotalProp)
 SummaryPropResp <- ddply(PropResp, c("ListType", "RespType", "Block"), SummaryData, "PropResp")
 SummaryPropResp$CondType <- paste(SummaryPropResp$ListType, SummaryPropResp$RespType, sep="")
 
+SummaryPropResp_Plot <- SummaryPropResp[SummaryPropResp$RespType %in% c("FA", "Hit"), ]
+SummaryPropResp_Plot$CondType <- factor(SummaryPropResp_Plot$CondType, levels=c("OldHit", "SimilarFA", "NewFA"),
+                                        labels=c("Hits", "False Alarm: \nSimilar", "False Alarm: \n New"))
+SummaryPropResp_Plot$Block <- factor(SummaryPropResp_Plot$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
 
-TestRTBar <- ggplot(data=SummaryPropResp[SummaryPropResp$RespType %in% c("CR", "Hit"), ], 
-                    aes(x=Block, y=Mean, fill=Condition)) +
+
+PropRespBar <- ggplot(data=SummaryPropResp_Plot, aes(x=CondType, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  scale_fill_manual(values=c("#00185C", "#D0902B", "#F1D4A6", "#CA2F2F"),
+  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
                     breaks=FactorLabels$Condition$labels, 
                     labels=FactorLabels$Condition$labels) + 
-  labs(x="Condition", y="RT", fill="Object Type") +
+  labs(x="Response Type", y="Mean", fill="Condition") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
 
