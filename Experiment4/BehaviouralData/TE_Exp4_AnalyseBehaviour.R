@@ -322,6 +322,12 @@ TestData[(TestData$ListType %in% c("Similar")) & TestData$Resp==3, "RespType"] <
 TestData[(TestData$ListType %in% c("New")) & TestData$Resp==2, "RespType"] <- "Incorr"
 CheckMerge(TestData)
 
+PropResp <- ddply(TestData, c("Participant", "ListType", "RespType"), summarise, PropResp=length(RespType))
+TotalTrials <- ddply (TestData, c("Participant", "ListType"), summarise, TotalTrials=length(ListType))
+PropResp <- merge(PropResp, TotalTrials, by=c("Participant", "ListType"), all.x=TRUE, all.y=TRUE)
+CheckMerge(PropResp)
+
+
 
 
 
