@@ -309,6 +309,19 @@ TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Block, y=Mean, fill=Condition)) +
   labs(x="Condition", y="RT", fill="Object Type") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
+##### Calculate hits, FAs #####
+
+TestData[TestData$ListType=="Old" & TestData$Resp==1, "RespType"] <- "Hit"
+TestData[TestData$ListType=="Similar" & TestData$Resp==2, "RespType"] <- "CR"
+TestData[TestData$ListType=="New" & TestData$Resp==3, "RespType"] <- "CR"
+
+TestData[TestData$ListType=="Old" & (TestData$Resp %in% c(2, 3)), "RespType"] <- "Miss"
+TestData[(TestData$ListType %in% c("Similar", "New")) & TestData$Resp==1, "RespType"] <- "FA"
+
+TestData[(TestData$ListType %in% c("Similar")) & TestData$Resp==3, "RespType"] <- "Incorr"
+TestData[(TestData$ListType %in% c("New")) & TestData$Resp==2, "RespType"] <- "Incorr"
+CheckMerge(TestData)
+
 
 
 
