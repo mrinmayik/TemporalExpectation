@@ -322,10 +322,35 @@ TestData[(TestData$ListType %in% c("Similar")) & TestData$Resp==3, "RespType"] <
 TestData[(TestData$ListType %in% c("New")) & TestData$Resp==2, "RespType"] <- "Incorr"
 CheckMerge(TestData)
 
-PropResp <- ddply(TestData, c("Participant", "ListType", "RespType"), summarise, PropResp=length(RespType))
-TotalTrials <- ddply (TestData, c("Participant", "ListType"), summarise, TotalTrials=length(ListType))
-PropResp <- merge(PropResp, TotalTrials, by=c("Participant", "ListType"), all.x=TRUE, all.y=TRUE)
+PropResp <- ddply(TestData, c("Participant", "ListType", "RespType", "Block"), summarise, SumResp=length(RespType))
+TotalTrials <- ddply (TestData, c("Participant", "ListType", "Block"), summarise, TotalTrials=length(ListType))
+PropResp <- merge(PropResp, TotalTrials, by=c("Participant", "ListType", "Block"), all.x=TRUE, all.y=TRUE)
 CheckMerge(PropResp)
+
+PropResp$PropResp <- PropResp$SumResp/PropResp$TotalTrials
+SumProp <- ddply(PropResp, c("Participant", "ListType", "Block"), summarise, SumProp=sum(PropResp))
+#Make sure that proportions add up to 1
+(CheckTotalProp <- all(SumProp$SumProp==1))
+CheckTrialNumbers(CheckTotalProp)
+
+SummaryPropResp <- ddply(PropResp, c("ListType", "RespType", "Block"), SummaryData, "PropResp")
+SummaryPropResp$CondType <- paste(SummaryPropResp$ListType, SummaryPropResp$RespType, sep="")
+
+
+TestRTBar <- ggplot(data=SummaryPropResp[SummaryPropResp$RespType %in% c("CR", "Hit"), ], 
+                    aes(x=Block, y=Mean, fill=Condition)) +
+  stdbar +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  scale_fill_manual(values=c("#00185C", "#D0902B", "#F1D4A6", "#CA2F2F"),
+                    breaks=FactorLabels$Condition$labels, 
+                    labels=FactorLabels$Condition$labels) + 
+  labs(x="Condition", y="RT", fill="Object Type") +
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+
+
+
+
+
 
 
 
