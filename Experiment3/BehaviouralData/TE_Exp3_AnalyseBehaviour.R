@@ -310,6 +310,50 @@ TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Block, y=Mean, fill=Condition)) +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
 
+##### Calculate hits, FAs #####
+
+TestData[TestData$ListType=="Old" & TestData$Resp==1, "RespType"] <- "Hit"
+TestData[TestData$ListType=="Similar" & TestData$Resp==2, "RespType"] <- "CR"
+TestData[TestData$ListType=="New" & TestData$Resp==3, "RespType"] <- "CR"
+
+TestData[TestData$ListType=="Old" & (TestData$Resp %in% c(2, 3)), "RespType"] <- "Miss"
+TestData[(TestData$ListType %in% c("Similar", "New")) & TestData$Resp==1, "RespType"] <- "FA"
+
+TestData[(TestData$ListType %in% c("Similar")) & TestData$Resp==3, "RespType"] <- "Incorr"
+TestData[(TestData$ListType %in% c("New")) & TestData$Resp==2, "RespType"] <- "Incorr"
+CheckMerge(TestData)
+
+PropResp <- ddply(TestData, c("Participant", "ListType", "RespType", "Block"), summarise, SumResp=length(RespType))
+TotalTrials <- ddply (TestData, c("Participant", "ListType", "Block"), summarise, TotalTrials=length(ListType))
+PropResp <- merge(PropResp, TotalTrials, by=c("Participant", "ListType", "Block"), all.x=TRUE, all.y=TRUE)
+CheckMerge(PropResp)
+
+PropResp$PropResp <- PropResp$SumResp/PropResp$TotalTrials
+SumProp <- ddply(PropResp, c("Participant", "ListType", "Block"), summarise, SumProp=sum(PropResp))
+#Make sure that proportions add up to 1
+(CheckTotalProp <- all(SumProp$SumProp==1))
+CheckTrialNumbers(CheckTotalProp)
+
+SummaryPropResp <- ddply(PropResp, c("ListType", "RespType", "Block"), SummaryData, "PropResp")
+SummaryPropResp$CondType <- paste(SummaryPropResp$ListType, SummaryPropResp$RespType, sep="")
+
+SummaryPropResp_Plot <- SummaryPropResp[SummaryPropResp$RespType %in% c("FA", "Hit"), ]
+SummaryPropResp_Plot$CondType <- factor(SummaryPropResp_Plot$CondType, levels=c("OldHit", "SimilarFA", "NewFA"),
+                                        labels=c("Hits", "False Alarm: \nSimilar", "False Alarm: \n New"))
+SummaryPropResp_Plot$Block <- factor(SummaryPropResp_Plot$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
+
+
+PropRespBar <- ggplot(data=SummaryPropResp_Plot, aes(x=CondType, y=Mean, fill=Block)) +
+  stdbar +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
+                    breaks=FactorLabels$Block$labels, 
+                    labels=FactorLabels$Block$labels) + 
+  labs(x="Response Type", y="Mean", fill="Condition") +
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+
+
+
 
 
 
