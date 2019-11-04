@@ -84,7 +84,7 @@ for(Files in FileNames){
   
   #In the object rows add 1000 because the object was always up for 1s
   #The fixation row has the code with all the information from the datasource. So anything WITHOUT ; is the object row
-  EncodeLog[-(grep(";", EncodeLog$Picture)), "IdealTime"] <- 500
+  EncodeLog[-(grep(";", EncodeLog$Picture)), "IdealTime"] <- 700
   #Read in the CB sheet to get time of actual ISIs
   ThisCB <- read.csv(paste(CBPath, "CB_Encode_", str_extract(Files, "[0-9]?[0-9][a-z]"), ".csv", sep=""))
   ##Add time from CB to the rows with fixation
@@ -96,7 +96,7 @@ for(Files in FileNames){
   
   #Print warning if there is a discrepancy in any trial that isn't the last trial of the block.
   #The last trial should have 192 as trial number in the event code
-  if(!(all(grep("192", EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
+  if(!(all(grep("192", EncodeLog[abs(EncodeLog$Discrepancy)>19, "Picture"]) == c(1, 2)))){
     print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
   }
   print(sprintf("CB%s done!!", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
@@ -153,7 +153,7 @@ CheckTrialNumbers(CheckTrials)
 
 #Add a column for trial duration
 EncodeData <- ddply(EncodeData, c("Participant", "Block"), AddTrialDur)
-EncodeData$IdealTrialDur <- EncodeData$ISI+500
+EncodeData$IdealTrialDur <- EncodeData$ISI+700
 #Check if that matches up with what it should be
 EncodeData$TimeDiscrepancy <- EncodeData$IdealTrialDur - EncodeData$TrialDur
 EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>(17*2)
