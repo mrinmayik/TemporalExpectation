@@ -274,13 +274,13 @@ SummaryTestAcc$Condition <- factor(SummaryTestAcc$Condition,
                                    levels=FactorLabels$Condition$levels, 
                                    labels=FactorLabels$Condition$labels)
 
-TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Block, y=Mean, fill=Condition)) +
+TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  scale_fill_manual(values=c("#00185C", "#D0902B", "#F1D4A6", "#CA2F2F"),
-                    breaks=FactorLabels$Condition$labels, 
-                    labels=FactorLabels$Condition$labels) + 
-  labs(x="Condition", y="Accuracy", fill="Object Type") + 
+  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
+                    breaks=FactorLabels$Block$labels, 
+                    labels=FactorLabels$Block$labels) + 
+  labs(x="Object Type", y="Accuracy", fill="Condition") + 
   geom_hline(yintercept = 100/4, linetype="dashed", size=1) + 
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
@@ -300,12 +300,12 @@ SummaryTestRT$Condition <- factor(SummaryTestRT$Condition,
                                    levels=FactorLabels$Condition$levels, 
                                    labels=FactorLabels$Condition$labels)
 
-TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Block, y=Mean, fill=Condition)) +
+TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Condition, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  scale_fill_manual(values=c("#00185C", "#D0902B", "#F1D4A6", "#CA2F2F"),
-                    breaks=FactorLabels$Condition$labels, 
-                    labels=FactorLabels$Condition$labels) + 
+  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
+                    breaks=FactorLabels$Block$labels, 
+                    labels=FactorLabels$Block$labels) + 
   labs(x="Condition", y="RT", fill="Object Type") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
@@ -346,8 +346,8 @@ PropRespBar <- ggplot(data=SummaryPropResp_Plot, aes(x=CondType, y=Mean, fill=Bl
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#E25F70", "#FBB79E"),
-                    breaks=FactorLabels$Condition$labels, 
-                    labels=FactorLabels$Condition$labels) + 
+                    breaks=FactorLabels$Block$labels, 
+                    labels=FactorLabels$Block$labels) + 
   labs(x="Response Type", y="Mean", fill="Condition") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
