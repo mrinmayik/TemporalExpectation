@@ -292,13 +292,13 @@ Acc_ANOVA$ANOVA
 
 ##### Look at RT now
 
-unique(TestData$Participant)
-length(unique(TestData$Participant))
+unique(TestGoodData$Participant)
+length(unique(TestGoodData$Participant))
 
 #Calculate RT
-TestData$RT <- TestData$RespTime-TestData$ObjectTime
+TestGoodData$RT <- TestGoodData$RespTime-TestGoodData$ObjectTime
 #Collapse RT across trials
-TestRT <- ddply(TestData, c("Participant", "Block", "Condition"), SummaryData, "RT")
+TestRT <- ddply(TestGoodData, c("Participant", "Block", "Condition"), SummaryData, "RT")
 #Collapse across participants
 SummaryTestRT <- ddply(TestRT, c("Block", "Condition"), SummaryData, "Mean")
 SummaryTestRT$Block <- factor(SummaryTestRT$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
@@ -322,19 +322,19 @@ RT_ANOVA$ANOVA
 
 ##### Calculate hits, FAs #####
 
-TestData[TestData$ListType=="Old" & TestData$Resp==1, "RespType"] <- "Hit"
-TestData[TestData$ListType=="Similar" & TestData$Resp==2, "RespType"] <- "CR"
-TestData[TestData$ListType=="New" & TestData$Resp==3, "RespType"] <- "CR"
+TestGoodData[TestGoodData$ListType=="Old" & TestGoodData$Resp==1, "RespType"] <- "Hit"
+TestGoodData[TestGoodData$ListType=="Similar" & TestGoodData$Resp==2, "RespType"] <- "CR"
+TestGoodData[TestGoodData$ListType=="New" & TestGoodData$Resp==3, "RespType"] <- "CR"
 
-TestData[TestData$ListType=="Old" & (TestData$Resp %in% c(2, 3)), "RespType"] <- "Miss"
-TestData[(TestData$ListType %in% c("Similar", "New")) & TestData$Resp==1, "RespType"] <- "FA"
+TestGoodData[TestGoodData$ListType=="Old" & (TestGoodData$Resp %in% c(2, 3)), "RespType"] <- "Miss"
+TestGoodData[(TestGoodData$ListType %in% c("Similar", "New")) & TestGoodData$Resp==1, "RespType"] <- "FA"
 
-TestData[(TestData$ListType %in% c("Similar")) & TestData$Resp==3, "RespType"] <- "Incorr"
-TestData[(TestData$ListType %in% c("New")) & TestData$Resp==2, "RespType"] <- "Incorr"
-CheckMerge(TestData)
+TestGoodData[(TestGoodData$ListType %in% c("Similar")) & TestGoodData$Resp==3, "RespType"] <- "Incorr"
+TestGoodData[(TestGoodData$ListType %in% c("New")) & TestGoodData$Resp==2, "RespType"] <- "Incorr"
+CheckMerge(TestGoodData)
 
-PropResp <- ddply(TestData, c("Participant", "Condition", "RespType", "Block"), summarise, SumResp=length(RespType))
-TotalTrials <- ddply (TestData, c("Participant", "Condition", "Block"), summarise, TotalTrials=length(ListType))
+PropResp <- ddply(TestGoodData, c("Participant", "Condition", "RespType", "Block"), summarise, SumResp=length(RespType))
+TotalTrials <- ddply (TestGoodData, c("Participant", "Condition", "Block"), summarise, TotalTrials=length(ListType))
 PropResp <- merge(PropResp, TotalTrials, by=c("Participant", "Condition", "Block"), all.x=TRUE, all.y=TRUE)
 CheckMerge(PropResp)
 
