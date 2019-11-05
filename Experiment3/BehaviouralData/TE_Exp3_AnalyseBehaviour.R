@@ -6,6 +6,7 @@
 library(reshape)
 library(readr)
 library(stringr)
+library(ez)
 
 ########################## Set Admin variables ##########################
 
@@ -284,6 +285,11 @@ TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) 
   geom_hline(yintercept = 100/3, linetype="dashed", size=1) + 
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
+#Do stats on it
+Acc_ANOVA <- ezANOVA(data=TestAcc, dv=PercAcc, wid=Participant, within=c(Block, Condition), 
+                     detailed=TRUE, type=2)
+Acc_ANOVA$ANOVA
+
 ##### Look at RT now
 
 unique(TestData$Participant)
@@ -309,6 +315,10 @@ TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Condition, y=Mean, fill=Block)) +
   labs(x="Object Type", y="Accuracy", fill="Condition") + 
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
+#Do stats on it
+RT_ANOVA <- ezANOVA(data=TestRT, dv=Mean, wid=Participant, within=c(Block, Condition), 
+                     detailed=TRUE, type=2)
+RT_ANOVA$ANOVA
 
 ##### Calculate hits, FAs #####
 
