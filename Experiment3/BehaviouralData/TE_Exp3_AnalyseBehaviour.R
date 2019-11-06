@@ -367,7 +367,16 @@ TestGoodData[(TestGoodData$ListType %in% c("Similar")) & TestGoodData$Resp==3, "
 TestGoodData[(TestGoodData$ListType %in% c("New")) & TestGoodData$Resp==2, "RespType"] <- "Incorr"
 CheckMerge(TestGoodData)
 
-PropResp <- ddply(TestGoodData, c("Participant", "Condition", "RespType", "Block"), summarise, SumResp=length(RespType))
+#drop=FALSE makes sure that every level of the independent variables will be accounted for
+#It's not ideal because it will make a row for Old and Correct Rejection and so on. These trials need to be removed manually
+PropResp <- ddply(TestGoodData, c("Participant", "Condition", "RespType", "Block"), .drop=FALSE, summarise, SumResp=length(RespType))
+PropResp <- PropResp[which((PropResp$Condition=="Old" & PropResp$RespType %in% c("Hit", "Miss")) |
+                           (PropResp$Condition=="New" & PropResp$RespType %in% c("CR", "FA", "Incorr")) | 
+                           (PropResp$Condition=="Similar_LI" & PropResp$RespType %in% c("CR", "FA", "Incorr")) |
+                           (PropResp$Condition=="Similar_HI" & PropResp$RespType %in% c("CR", "FA", "Incorr"))), ]
+
+
+
 TotalTrials <- ddply (TestGoodData, c("Participant", "Condition", "Block"), summarise, TotalTrials=length(ListType))
 PropResp <- merge(PropResp, TotalTrials, by=c("Participant", "Condition", "Block"), all.x=TRUE, all.y=TRUE)
 CheckMerge(PropResp)
@@ -410,5 +419,21 @@ PropResp_NoSim <- PropResp[PropResp$Condition %in% c("Old", "New"), ]
 CorrReg_NoSim <- ddply(PropResp_NoSim, c("Participant", "Block"), summarise, 
                        CorrReg=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="New" & RespType=="FA"])
 
+SummaryCorrReg <- ddply(CorrReg_NoSim, c("Block"), SummaryData, "CorrReg")
+SummaryCorrReg$Block <- factor(SummaryCorrReg$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
+
+CorrReg <- ggplot(data=SummaryCorrReg, aes(x=Block, y=Mean, fill=Block)) +
+  stdbar +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
+                    breaks=FactorLabels$Block$labels, 
+                    labels=FactorLabels$Block$labels) + 
+  labs(x="Condition", y="Mean") +
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+
+#Do stats on it
+CorrReg_ANOVA <- ezANOVA(data=CorrReg_NoSim, dv=CorrReg, wid=Participant, within=Block, 
+                          detailed=TRUE, type=2)
+CorrReg_ANOVA$ANOVA
 
 
