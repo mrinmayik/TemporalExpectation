@@ -231,7 +231,8 @@ TestData <- TestData[order(TestData$Participant, TestData$Block, TestData$Trial)
 #Get the codes of what the correct answer should be
 TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New"), labels=c(1, 2, 3))
 
-##### Look at accuracy
+####Figure outt bad subjects
+#Based on accuracy
 TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New"), labels=c(1, 2, 3))
 #Are responses correct?
 TestData$Acc <- TestData$Resp==TestData$CorrCode
@@ -249,6 +250,28 @@ TotalAcc <- SummaryData(PartAcc, "PercAcc")
 
 PartAcc$Exclude <- (PartAcc$PercAcc<=(TotalAcc$Mean-(2*TotalAcc$SD))) | (PartAcc$PercAcc>=(TotalAcc$Mean+(2*TotalAcc$SD)))
 toexclude <- c(toexclude, PartAcc[PartAcc$Exclude==TRUE, "Participant"])
+
+#Based on RT
+#Calculate RT
+TestData$RT <- TestData$RespTime-TestData$ObjectTime
+TestData$ExcludeTrials <- FALSE
+TestData[(TestData$RT<100 | TestData$RT>3000), "ExcludeTrials"] <- TRUE
+CheckMerge(TestData)
+
+(PartRT <- ddply(TestData, c("Participant"), summarise, 
+                 ExTrials=sum(ExcludeTrials), 
+                 IncTrials=sum(!ExcludeTrials),
+                 TotalBehTrials=sum(ExTrials, IncTrials),
+                 IdealTrials=length(Participant),
+                 PercEx=(ExTrials/TotalBehTrials)*100,
+                 SC=TotalBehTrials==IdealTrials))
+
+TotalExRT <- SummaryData(PartRT, "PercEx")
+PartRT$Exclude <- (PartRT$PercEx>=(TotalExRT$Mean+(2*TotalExRT$SD))) #(PartRT$PercEx<=(TotalExRT$Mean-(2*TotalExRT$SD))) | 
+toexclude <- c(toexclude, PartRT[PartRT$Exclude==TRUE, "Participant"])
+
+
+##### Look at accuracy
 
 #Remove participants whose accuracy is too low or too high
 TestGoodData <- TestData[!(TestData$Participant %in% toexclude), ]
@@ -295,8 +318,6 @@ Acc_ANOVA$ANOVA
 unique(TestGoodData$Participant)
 length(unique(TestGoodData$Participant))
 
-#Calculate RT
-TestGoodData$RT <- TestGoodData$RespTime-TestGoodData$ObjectTime
 #Collapse RT across trials
 TestRT <- ddply(TestGoodData, c("Participant", "Block", "Condition"), SummaryData, "RT")
 #Collapse across participants
@@ -361,5 +382,15 @@ PropRespBar <- ggplot(data=SummaryPropResp_Plot, aes(x=CondType, y=Mean, fill=Bl
                     labels=FactorLabels$Block$labels) + 
   labs(x="Response Type", y="Mean", fill="Condition") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+
+
+PropResp_AOV <- PropResp[PropResp$RespType %in% c("Hit", "FA"),]
+
+#Do stats on it
+PropResp_ANOVA <- ezANOVA(data=PropResp_AOV, dv=PropResp, wid=Participant, within=c(Block, Condition), 
+                    detailed=TRUE, type=2)
+PropResp_ANOVA$ANOVA
+
+
 
 
