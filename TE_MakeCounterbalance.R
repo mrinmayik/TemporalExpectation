@@ -141,7 +141,7 @@ ISIComboDict <- read.xlsx(paste(BasePath, "Experiment1/Counterbalancing/Counterb
                           cols=1:5, rows=28:52, colNames=TRUE)
 
 #Change this to 1, 2, 3 and so on and so forth for different participants
-Part=1
+Part=8
 #This will alternate between a and b to yoke participants. So there will be 
 #a 1a, 1b, 2a, 2b and so on
 Ver="a"
