@@ -14,8 +14,8 @@ library(ez)
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
-DataPath <- paste(BasePath, "Experiment/Experiment3/Data/", sep = "")
-CBPath <- paste(BasePath, "Experiment/Experiment3/Counterbalancing/", sep = "")
+DataPath <- paste(BasePath, "Experiment/Experiment4/Data/", sep = "")
+CBPath <- paste(BasePath, "Experiment/Experiment4/Counterbalancing/", sep = "")
 
 NumBlocks <- 2
 Save=1
@@ -25,7 +25,7 @@ FactorLabels <- list("Block" = list("levels"=c("TR", "TI"),
                      "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
                                         "labels"=c("Old", "Similar: HI", "Similar: LI", "New")))
 #Excluded for incorrect timing, misunderstanding instructions
-toexclude <- c("CB1a_1", "CB3b_2")
+toexclude <- c()
 
 ########################## Functions ##########################
 
