@@ -13,11 +13,12 @@ library(ez)
 #Initialise basic stuff
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 
-BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/Experiment/"
-DataPath <- paste(BasePath, "Experiment3/Data/", sep = "")
-CBPath <- paste(BasePath, "Experiment3/Counterbalancing/", sep = "")
+BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
+DataPath <- paste(BasePath, "Experiment/Experiment3/Data/", sep = "")
+CBPath <- paste(BasePath, "Experiment/Experiment3/Counterbalancing/", sep = "")
 
 NumBlocks <- 2
+Save=1
 
 FactorLabels <- list("Block" = list("levels"=c("TR", "TI"), 
                                     "labels"=c("Regular", "Irregular")),
@@ -231,7 +232,7 @@ TestData <- TestData[order(TestData$Participant, TestData$Block, TestData$Trial)
 #Get the codes of what the correct answer should be
 TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New"), labels=c(1, 2, 3))
 
-####Figure outt bad subjects
+####Figure out bad subjects
 #Based on accuracy
 #Are responses correct?
 TestData$Acc <- TestData$Resp==TestData$CorrCode
@@ -312,7 +313,7 @@ SummaryTestAcc$Condition <- factor(SummaryTestAcc$Condition,
                                    levels=FactorLabels$Condition$levels, 
                                    labels=FactorLabels$Condition$labels)
 
-TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) +
+TestAccBar <-   ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#E25F70", "#FBB79E"),
@@ -320,12 +321,19 @@ TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Object Type", y="Accuracy", fill="Condition") + 
   geom_hline(yintercept = 100/3, linetype="dashed", size=1) + 
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme 
 
 #Do stats on it
 Acc_ANOVA <- ezANOVA(data=TestAcc, dv=PercAcc, wid=Participant, within=c(Block, Condition), 
                      detailed=TRUE, type=2)
 Acc_ANOVA$ANOVA
+
+if(Save==1){
+  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/TestAccBar_Exp3.jpeg", BasePath), 
+       width=2500, height=2000, res=300)
+  plot(TestAccBar)
+  dev.off()
+}
 
 ##### Look at RT now
 
@@ -348,12 +356,19 @@ TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Condition, y=Mean, fill=Block)) +
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Object Type", y="Accuracy", fill="Condition") + 
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme 
 
 #Do stats on it
 RT_ANOVA <- ezANOVA(data=TestRT, dv=Mean, wid=Participant, within=c(Block, Condition), 
                      detailed=TRUE, type=2)
 RT_ANOVA$ANOVA
+
+if(Save==1){
+  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/TestRTBar_Exp3.jpeg", BasePath), 
+       width=2500, height=2000, res=300)
+  plot(TestRTBar)
+  dev.off()
+}
 
 ##### Calculate hits, FAs #####
 
@@ -414,6 +429,12 @@ PropResp_ANOVA <- ezANOVA(data=PropResp_AOV, dv=PropResp, wid=Participant, withi
                     detailed=TRUE, type=2)
 PropResp_ANOVA$ANOVA
 
+if(Save==1){
+  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/PropRespBar_Exp3.jpeg", BasePath), 
+       width=2500, height=2000, res=300)
+  plot(PropRespBar)
+  dev.off()
+}
 
 #Only look at new and old trials to replicate analysis from Ward & Jones (2019)
 #PropResp_NoSim <- PropResp[PropResp$Condition %in% c("Old", "New"), ]
@@ -425,14 +446,22 @@ CorrReg <- ddply(PropResp, c("Participant", "Block"), summarise,
 SummaryCorrReg_NoSim <- ddply(CorrReg, c("Block"), SummaryData, "CorrReg_New")
 SummaryCorrReg_NoSim$Block <- factor(SummaryCorrReg_NoSim$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
 
-CorrReg_NoSim <- ggplot(data=SummaryCorrReg_NoSim, aes(x=Block, y=Mean, fill=Block)) +
+CorrReg_NoSimBar <- ggplot(data=SummaryCorrReg_NoSim, aes(x=Block, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#E25F70", "#FBB79E"),
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Condition", y="Corrected Recognition") +
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + theme(legend.position = "None")
+
+if(Save==1){
+  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/CorrReg_NoSimBar_Exp3.jpeg", BasePath), 
+       width=1500, height=2000, res=300)
+  plot(CorrReg_NoSimBar)
+  dev.off()
+}
+
 
 #Look at corrected recognition in similar
 CorrReg_Long <- melt(CorrReg)
@@ -442,7 +471,7 @@ SummaryCorrReg$Block <- factor(SummaryCorrReg$Block, levels=FactorLabels$Block$l
 SummaryCorrReg$variable <- factor(SummaryCorrReg$variable, levels=c("CorrReg_SimHI", "CorrReg_SimLI", "CorrReg_New"), 
                                   labels=FactorLabels$Condition$labels[2:4])
 
-CorrReg <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
+CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#E25F70", "#FBB79E"),
