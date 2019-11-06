@@ -280,6 +280,11 @@ toexclude <- c(toexclude, PartRT[PartRT$Exclude==TRUE, "Participant"])
 #Remove participants whose accuracy is too low or too high
 print("DELETE [1:3] LATER!!!!!!!!!")
 TestGoodData <- TestData[!(TestData$Participant %in% toexclude[1:3]), ]
+
+#Save out how many trials are excluded to make sure the total number of trials is correct
+NumExcludedTrials <- ddply(TestGoodData, c("Participant", "Block", "Condition"), summarise, 
+                           NumExcludedTrials=sum(ExcludeTrials))
+TestGoodData <- TestGoodData[TestGoodData$ExcludeTrials==FALSE, ]
 unique(TestGoodData$Participant)
 length(unique(TestGoodData$Participant))
 
@@ -287,10 +292,13 @@ length(unique(TestGoodData$Participant))
 TestAcc <- ddply(TestGoodData, c("Participant", "Block", "Condition"), summarise, 
                  BehAcc=sum(Acc), 
                  BehNAcc=sum(!Acc),
-                 TotalBehTrials=sum(BehAcc, BehNAcc),
                  IdealTrials=length(Participant),
                  PercAcc=(BehAcc/TotalBehTrials)*100,
                  SC=TotalBehTrials==IdealTrials)
+#Merge with number of trials of excluded
+TestAcc <- merge(TestAcc, NumExcludedTrials, by=c("Participant", "Block", "Condition"), all.x=TRUE, all.y=TRUE)
+TestAcc$TotalBehTrials <- TestAcc$BehAcc+TestAcc$BehNAcc+TestAcc$NumExcludedTrials
+
 (CheckSumTrials <- all(TestAcc$SC))
 (CheckOldNewTrials <- all(TestAcc[TestAcc$Condition %in% c("Old", "New"), "TotalBehTrials"]==48))
 (CheckSimTrials <- all(TestAcc[TestAcc$Condition %in% c("Similar_HI", "Similar_LI"), "TotalBehTrials"]==24))
@@ -367,7 +375,7 @@ CheckMerge(PropResp)
 PropResp$PropResp <- PropResp$SumResp/PropResp$TotalTrials
 SumProp <- ddply(PropResp, c("Participant", "Condition", "Block"), summarise, SumProp=sum(PropResp))
 #Make sure that proportions add up to 1
-(CheckTotalProp <- all(SumProp$SumProp==1))
+(CheckTotalProp <- all(round(SumProp$SumProp, 1)==1))
 CheckTrialNumbers(CheckTotalProp)
 
 SummaryPropResp <- ddply(PropResp, c("Condition", "RespType", "Block"), SummaryData, "PropResp")
@@ -389,13 +397,18 @@ PropRespBar <- ggplot(data=SummaryPropResp_Plot, aes(x=CondType, y=Mean, fill=Bl
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
 
-PropResp_AOV <- PropResp[PropResp$RespType %in% c("Hit", "FA"),]
+PropResp_AOV <- PropResp[PropResp$RespType %in% c("FA"),]
 
 #Do stats on it
 PropResp_ANOVA <- ezANOVA(data=PropResp_AOV, dv=PropResp, wid=Participant, within=c(Block, Condition), 
                     detailed=TRUE, type=2)
 PropResp_ANOVA$ANOVA
 
+
+#Only look at new and old trials to replicate analysis from Ward & Jones (2019)
+PropResp_NoSim <- PropResp[PropResp$Condition %in% c("Old", "New"), ]
+CorrReg_NoSim <- ddply(PropResp_NoSim, c("Participant", "Block"), summarise, 
+                       CorrReg=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="New" & RespType=="FA"])
 
 
 
