@@ -292,9 +292,10 @@ length(unique(TestGoodData$Participant))
 TestAcc <- ddply(TestGoodData, c("Participant", "Block", "Condition"), summarise, 
                  BehAcc=sum(Acc), 
                  BehNAcc=sum(!Acc),
+                 TotalGoodTrials=sum(BehAcc, BehNAcc),
                  IdealTrials=length(Participant),
-                 PercAcc=(BehAcc/TotalBehTrials)*100,
-                 SC=TotalBehTrials==IdealTrials)
+                 PercAcc=(BehAcc/TotalGoodTrials)*100,
+                 SC=TotalGoodTrials==IdealTrials)
 #Merge with number of trials of excluded
 TestAcc <- merge(TestAcc, NumExcludedTrials, by=c("Participant", "Block", "Condition"), all.x=TRUE, all.y=TRUE)
 TestAcc$TotalBehTrials <- TestAcc$BehAcc+TestAcc$BehNAcc+TestAcc$NumExcludedTrials
@@ -415,25 +416,46 @@ PropResp_ANOVA$ANOVA
 
 
 #Only look at new and old trials to replicate analysis from Ward & Jones (2019)
-PropResp_NoSim <- PropResp[PropResp$Condition %in% c("Old", "New"), ]
-CorrReg_NoSim <- ddply(PropResp_NoSim, c("Participant", "Block"), summarise, 
-                       CorrReg=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="New" & RespType=="FA"])
+#PropResp_NoSim <- PropResp[PropResp$Condition %in% c("Old", "New"), ]
+CorrReg <- ddply(PropResp, c("Participant", "Block"), summarise, 
+                       CorrReg_New=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="New" & RespType=="FA"],
+                       CorrReg_SimHI=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="Similar_HI" & RespType=="FA"],
+                       CorrReg_SimLI=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="Similar_LI" & RespType=="FA"])
 
-SummaryCorrReg <- ddply(CorrReg_NoSim, c("Block"), SummaryData, "CorrReg")
-SummaryCorrReg$Block <- factor(SummaryCorrReg$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
+SummaryCorrReg_NoSim <- ddply(CorrReg, c("Block"), SummaryData, "CorrReg_New")
+SummaryCorrReg_NoSim$Block <- factor(SummaryCorrReg_NoSim$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
 
-CorrReg <- ggplot(data=SummaryCorrReg, aes(x=Block, y=Mean, fill=Block)) +
+CorrReg_NoSim <- ggplot(data=SummaryCorrReg_NoSim, aes(x=Block, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#E25F70", "#FBB79E"),
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
-  labs(x="Condition", y="Mean") +
+  labs(x="Condition", y="Corrected Recognition") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
 
+#Look at corrected recognition in similar
+CorrReg_Long <- melt(CorrReg)
+
+SummaryCorrReg <- ddply(CorrReg_Long, c("Block", "variable"), SummaryData, "value")
+SummaryCorrReg$Block <- factor(SummaryCorrReg$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
+SummaryCorrReg$variable <- factor(SummaryCorrReg$variable, levels=c("CorrReg_SimHI", "CorrReg_SimLI", "CorrReg_New"), 
+                                  labels=FactorLabels$Condition$labels[2:4])
+
+CorrReg <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
+  stdbar +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
+                    breaks=FactorLabels$Block$labels, 
+                    labels=FactorLabels$Block$labels) + 
+  labs(x="Condition", y="Corrected Recognition") +
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+
+
 #Do stats on it
-CorrReg_ANOVA <- ezANOVA(data=CorrReg_NoSim, dv=CorrReg, wid=Participant, within=Block, 
-                          detailed=TRUE, type=2)
+CorrReg_ANOVA <- ezANOVA(data=CorrReg_Long, dv=value, wid=Participant, within=c(Block, variable), 
+                         detailed=TRUE, type=2)
 CorrReg_ANOVA$ANOVA
+
 
 
