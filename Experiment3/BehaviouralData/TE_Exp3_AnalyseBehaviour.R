@@ -233,7 +233,6 @@ TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New")
 
 ####Figure outt bad subjects
 #Based on accuracy
-TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New"), labels=c(1, 2, 3))
 #Are responses correct?
 TestData$Acc <- TestData$Resp==TestData$CorrCode
 
@@ -247,8 +246,10 @@ TestData$Acc <- TestData$Resp==TestData$CorrCode
 length(unique(PartAcc$Participant))
 
 TotalAcc <- SummaryData(PartAcc, "PercAcc")
+LowCutoffAcc  <- quantile(PartAcc$PercAcc, 0.25)-(2*IQR(PartAcc$PercAcc))
+HighCutoffAcc  <- quantile(PartAcc$PercAcc, 0.75)+(2*IQR(PartAcc$PercAcc))
 
-PartAcc$Exclude <- (PartAcc$PercAcc<=(TotalAcc$Mean-(2*TotalAcc$SD))) | (PartAcc$PercAcc>=(TotalAcc$Mean+(2*TotalAcc$SD)))
+PartAcc$Exclude <- (PartAcc$PercAcc<=LowCutoffAcc) #| (PartAcc$PercAcc>=(TotalAcc$Mean+(2*TotalAcc$SD)))
 toexclude <- c(toexclude, PartAcc[PartAcc$Exclude==TRUE, "Participant"])
 
 #Based on RT
@@ -267,14 +268,18 @@ CheckMerge(TestData)
                  SC=TotalBehTrials==IdealTrials))
 
 TotalExRT <- SummaryData(PartRT, "PercEx")
-PartRT$Exclude <- (PartRT$PercEx>=(TotalExRT$Mean+(2*TotalExRT$SD))) #(PartRT$PercEx<=(TotalExRT$Mean-(2*TotalExRT$SD))) | 
+LowCutoffRT  <- quantile(PartRT$PercEx, 0.25)-(2*IQR(PartRT$PercEx))
+HighCutoffRT  <- quantile(PartRT$PercEx, 0.75)+(2*IQR(PartRT$PercEx))
+
+PartRT$Exclude <- (PartRT$PercEx>=HighCutoffRT) #| (PartAcc$PercAcc>=(TotalAcc$Mean+(2*TotalAcc$SD)))
 toexclude <- c(toexclude, PartRT[PartRT$Exclude==TRUE, "Participant"])
 
 
 ##### Look at accuracy
 
 #Remove participants whose accuracy is too low or too high
-TestGoodData <- TestData[!(TestData$Participant %in% toexclude), ]
+print("DELETE [1:3] LATER!!!!!!!!!")
+TestGoodData <- TestData[!(TestData$Participant %in% toexclude[1:3]), ]
 unique(TestGoodData$Participant)
 length(unique(TestGoodData$Participant))
 
