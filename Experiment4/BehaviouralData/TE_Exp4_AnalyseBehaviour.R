@@ -86,7 +86,7 @@ for(Files in FileNames){
   
   #In the object rows add 1000 because the object was always up for 1s
   #The fixation row has the code with all the information from the datasource. So anything WITHOUT ; is the object row
-  EncodeLog[-(grep(";", EncodeLog$Picture)), "IdealTime"] <- 1000
+  EncodeLog[-(grep(";", EncodeLog$Picture)), "IdealTime"] <- 700
   #Read in the CB sheet to get time of actual ISIs
   ThisCB <- read.csv(paste(CBPath, "CB_Encode_", str_extract(Files, "[0-9]?[0-9][a-z]"), ".csv", sep=""))
   ##Add time from CB to the rows with fixation
@@ -155,7 +155,7 @@ CheckTrialNumbers(CheckTrials)
 
 #Add a column for trial duration
 EncodeData <- ddply(EncodeData, c("Participant", "Block"), AddTrialDur)
-EncodeData$IdealTrialDur <- EncodeData$ISI+1000
+EncodeData$IdealTrialDur <- EncodeData$ISI+700
 #Check if that matches up with what it should be
 EncodeData$TimeDiscrepancy <- EncodeData$IdealTrialDur - EncodeData$TrialDur
 EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>(17*2)
@@ -329,7 +329,7 @@ Acc_ANOVA <- ezANOVA(data=TestAcc, dv=PercAcc, wid=Participant, within=c(Block, 
 Acc_ANOVA$ANOVA
 
 if(Save==1){
-  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/TestAccBar_Exp3.jpeg", BasePath), 
+  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/TestAccBar_Exp4.jpeg", BasePath), 
        width=2500, height=2000, res=300)
   plot(TestAccBar)
   dev.off()
@@ -364,7 +364,7 @@ RT_ANOVA <- ezANOVA(data=TestRT, dv=Mean, wid=Participant, within=c(Block, Condi
 RT_ANOVA$ANOVA
 
 if(Save==1){
-  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/TestRTBar_Exp3.jpeg", BasePath), 
+  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/TestRTBar_Exp4.jpeg", BasePath), 
        width=2500, height=2000, res=300)
   plot(TestRTBar)
   dev.off()
@@ -430,7 +430,7 @@ PropResp_ANOVA <- ezANOVA(data=PropResp_AOV, dv=PropResp, wid=Participant, withi
 PropResp_ANOVA$ANOVA
 
 if(Save==1){
-  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/PropRespBar_Exp3.jpeg", BasePath), 
+  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/PropRespBar_Exp4.jpeg", BasePath), 
        width=2500, height=2000, res=300)
   plot(PropRespBar)
   dev.off()
@@ -453,10 +453,10 @@ CorrReg_NoSimBar <- ggplot(data=SummaryCorrReg_NoSim, aes(x=Block, y=Mean, fill=
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Condition", y="Corrected Recognition") +
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + theme(legend.position = "None")
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + 
 
 if(Save==1){
-  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/CorrReg_NoSimBar_Exp3.jpeg", BasePath), 
+  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/1CorrReg_NoSimBar_Exp4.jpeg", BasePath), 
        width=1500, height=2000, res=300)
   plot(CorrReg_NoSimBar)
   dev.off()
