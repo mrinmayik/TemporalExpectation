@@ -98,7 +98,7 @@ for(Files in FileNames){
   
   #Print warning if there is a discrepancy in any trial that isn't the last trial of the block.
   #The last trial should have 192 as trial number in the event code
-  if(!(all(grep("192", EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
+  if(!(all(grep("192", EncodeLog[abs(EncodeLog$Discrepancy)>19, "Picture"]) == c(1, 2)))){
     print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
   }
   print(sprintf("CB%s done!!", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
@@ -158,7 +158,7 @@ EncodeData <- ddply(EncodeData, c("Participant", "Block"), AddTrialDur)
 EncodeData$IdealTrialDur <- EncodeData$ISI+700
 #Check if that matches up with what it should be
 EncodeData$TimeDiscrepancy <- EncodeData$IdealTrialDur - EncodeData$TrialDur
-EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>(17*2)
+EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>(19*2)
 
 View(EncodeData[EncodeData$TimeProblem==TRUE,])
 #Any wrong times that aren't the last trial for a block?
@@ -278,9 +278,8 @@ toexclude <- c(toexclude, PartRT[PartRT$Exclude==TRUE, "Participant"])
 
 ##### Look at accuracy
 
-#Remove participants whose accuracy is too low or too high
-print("DELETE [1:3] LATER!!!!!!!!!")
-TestGoodData <- TestData[!(TestData$Participant %in% toexclude[1:3]), ]
+#Remove participants whose accuracy is too low or bad trials is too high
+TestGoodData <- TestData[!(TestData$Participant %in% toexclude), ]
 
 #Save out how many trials are excluded to make sure the total number of trials is correct
 NumExcludedTrials <- ddply(TestGoodData, c("Participant", "Block", "Condition"), summarise, 
@@ -314,14 +313,14 @@ SummaryTestAcc$Condition <- factor(SummaryTestAcc$Condition,
                                    labels=FactorLabels$Condition$labels)
 
 TestAccBar <-   ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) +
-  stdbar +
+  stdbar + coord_cartesian(ylim=c(0, 85)) +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#E25F70", "#FBB79E"),
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Object Type", y="Accuracy", fill="Condition") + 
   geom_hline(yintercept = 100/3, linetype="dashed", size=1) + 
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme 
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + canvastheme
 
 #Do stats on it
 Acc_ANOVA <- ezANOVA(data=TestAcc, dv=PercAcc, wid=Participant, within=c(Block, Condition), 
@@ -447,16 +446,16 @@ SummaryCorrReg_NoSim <- ddply(CorrReg, c("Block"), SummaryData, "CorrReg_New")
 SummaryCorrReg_NoSim$Block <- factor(SummaryCorrReg_NoSim$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
 
 CorrReg_NoSimBar <- ggplot(data=SummaryCorrReg_NoSim, aes(x=Block, y=Mean, fill=Block)) +
-  stdbar +
+  stdbar + coord_cartesian(ylim=c(0, 0.85)) + 
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#E25F70", "#FBB79E"),
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Condition", y="Corrected Recognition") +
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + 
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + theme(legend.position = "None") + canvastheme
 
 if(Save==1){
-  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/1CorrReg_NoSimBar_Exp4.jpeg", BasePath), 
+  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/CorrReg_NoSimBar_Exp4.jpeg", BasePath), 
        width=1500, height=2000, res=300)
   plot(CorrReg_NoSimBar)
   dev.off()
