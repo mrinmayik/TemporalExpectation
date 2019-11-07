@@ -478,7 +478,7 @@ CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Condition", y="Corrected Recognition") +
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme
+  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + canvastheme
 
 
 #Do stats on it
