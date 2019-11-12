@@ -313,12 +313,12 @@ SummaryTestAcc$Condition <- factor(SummaryTestAcc$Condition,
                                    labels=FactorLabels$Condition$labels)
 
 TestAccBar <-   ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) +
-  stdbar + coord_cartesian(ylim=c(0, 85)) +
+  stdbar + coord_cartesian(ylim=c(0, 95)) +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
+  scale_fill_manual(values=c("#FFC2A3", "#123C69"),
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
-  labs(x="Object Type", y="Accuracy", fill="Condition") + 
+  labs(x="Object Type", y="Percent Correct", fill="Condition") + 
   geom_hline(yintercept = 100/3, linetype="dashed", size=1) + 
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + canvastheme
 
@@ -351,7 +351,7 @@ SummaryTestRT$Condition <- factor(SummaryTestRT$Condition,
 TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Condition, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
+  scale_fill_manual(values=c("#FFC2A3", "#123C69"),
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Object Type", y="Accuracy", fill="Condition") + 
@@ -414,7 +414,7 @@ SummaryPropResp_Plot$Block <- factor(SummaryPropResp_Plot$Block, levels=FactorLa
 PropRespBar <- ggplot(data=SummaryPropResp_Plot, aes(x=CondType, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
+  scale_fill_manual(values=c("#FFC2A3", "#123C69"),
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Response Type", y="Mean", fill="Condition") +
@@ -448,10 +448,10 @@ SummaryCorrReg_NoSim$Block <- factor(SummaryCorrReg_NoSim$Block, levels=FactorLa
 CorrReg_NoSimBar <- ggplot(data=SummaryCorrReg_NoSim, aes(x=Block, y=Mean, fill=Block)) +
   stdbar + coord_cartesian(ylim=c(0, 0.85)) + 
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
+  scale_fill_manual(values=c("#FFC2A3", "#123C69"),
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
-  labs(x="Condition", y="Corrected Recognition") +
+  labs(x="Condition", y="Hits – False Alarms") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + theme(legend.position = "None") + canvastheme
 
 if(Save==1){
@@ -473,7 +473,7 @@ SummaryCorrReg$variable <- factor(SummaryCorrReg$variable, levels=c("CorrReg_Sim
 CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  scale_fill_manual(values=c("#E25F70", "#FBB79E"),
+  scale_fill_manual(values=c("#FFC2A3", "#123C69"),
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Condition", y="Corrected Recognition") +
