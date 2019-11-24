@@ -18,14 +18,14 @@ DataPath <- paste(BasePath, "Experiment/Experiment4/Data/", sep = "")
 CBPath <- paste(BasePath, "Experiment/Experiment4/Counterbalancing/", sep = "")
 
 NumBlocks <- 2
-Save=1
+Save=0
 
 FactorLabels <- list("Block" = list("levels"=c("TR", "TI"), 
                                     "labels"=c("Regular", "Irregular")),
                      "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
                                         "labels"=c("Old", "Similar: HI", "Similar: LI", "New")))
 #Excluded for incorrect timing, misunderstanding instructions
-toexclude <- c()
+toexclude <- c("CB11b_4")
 
 ########################## Functions ##########################
 
