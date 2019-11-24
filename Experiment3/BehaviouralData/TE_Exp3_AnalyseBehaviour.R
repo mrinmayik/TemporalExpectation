@@ -25,7 +25,7 @@ FactorLabels <- list("Block" = list("levels"=c("TR", "TI"),
                      "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
                                         "labels"=c("Old", "Similar: HI", "Similar: LI", "New")))
 #Excluded for incorrect timing, misunderstanding instructions
-toexclude <- c("CB1a_1", "CB3b_2")
+toexclude <- c("CB1a_1", "CB3b_2", "CB3b_3")
 
 ########################## Functions ##########################
 
@@ -279,8 +279,7 @@ toexclude <- c(toexclude, PartRT[PartRT$Exclude==TRUE, "Participant"])
 ##### Look at accuracy
 
 #Remove participants whose accuracy is too low or too high
-print("DELETE [1:3] LATER!!!!!!!!!")
-TestGoodData <- TestData[!(TestData$Participant %in% toexclude[1:3]), ]
+TestGoodData <- TestData[!(TestData$Participant %in% toexclude), ]
 
 #Save out how many trials are excluded to make sure the total number of trials is correct
 NumExcludedTrials <- ddply(TestGoodData, c("Participant", "Block", "Condition"), summarise, 
