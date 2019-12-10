@@ -25,7 +25,7 @@ FactorLabels <- list("Block" = list("levels"=c("TR", "TI"),
                      "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
                                         "labels"=c("Old", "Similar: HI", "Similar: LI", "New")))
 #Excluded for incorrect timing, misunderstanding instructions
-toexclude <- c("CB1a_1", "CB3b_2", "CB3b_3")
+toexclude <- c("CB1a_1", "CB3b_2", "CB3b_3", "CB9a_3")
 
 ########################## Functions ##########################
 
