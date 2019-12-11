@@ -228,8 +228,7 @@ for(Cond in UseCondOrd){
     FinalEncode[FinalEncode$ISIType==2, "ISI"] <- ISICombo[2]
     FinalEncode[FinalEncode$ISIType==3, "ISI"] <- ISICombo[3]
     FinalEncode[FinalEncode$ISIType==4, "ISI"] <- ISICombo[4]
-  }
-  else if (Cond=="TI"){
+  }else if (Cond=="TI"){
     DoAgainTI <- 1
     while(DoAgainTI>0){
       FinalEncode <- ddply(FinalEncode, c("Set"), RandomiseTI, TIMethod)
@@ -240,6 +239,13 @@ for(Cond in UseCondOrd){
   #This is not necessary from the presentation POV, but may be needed so that a new analysis script doesn't need to be written
   FinalEncode[, "Picture"] <- FinalEncode[, "Scenes"]
   
+  #Because the Test should be setup such that the items encoded in the first quarter of the experiment are 
+  #tested first, get a list of objects split up by quarters
+  #split divides the data in the vector x into the groups defined by f
+  #unique is the function rapply is applying because each object is repreated twice in Final encode
+  QuartItems  <- rapply(split(FinalEncode[, "Items"], ceiling(seq_along(1:96)/24)), unique, how="list")
+  
+  ################################ Done with Encoding ################################  
 
 
     
