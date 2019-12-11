@@ -243,9 +243,35 @@ for(Cond in UseCondOrd){
   #tested first, get a list of objects split up by quarters
   #split divides the data in the vector x into the groups defined by f
   #unique is the function rapply is applying because each object is repreated twice in Final encode
-  QuartItems  <- rapply(split(FinalEncode[, "Items"], ceiling(seq_along(1:96)/24)), unique, how="list")
+  QuartItems  <- rapply(split(FinalEncode[, "Picture"], ceiling(seq_along(1:96)/24)), unique, how="list")
   
-  ################################ Done with Encoding ################################  
+  ################################ Done with Encoding ################################
+  ################################     Now do test    ################################
+  #Just get old and new from the list for now so that they can be randomised based on quarters from
+  #encoding
+  UseList <- MasterList[MasterList$ListAssignment %in%  ListRot[[paste("CB", CB, sep="")]][[Cond]][1], ]
+
+  #Build Uselist from the quarters made above
+  UseList <- rbind(UseList[sample(which(UseList$Scenes %in% QuartItems$`1`)),],
+                   UseList[sample(which(UseList$Scenes %in% QuartItems$`2`)),],
+                   UseList[sample(which(UseList$Scenes %in% QuartItems$`3`)),],
+                   UseList[sample(which(UseList$Scenes %in% QuartItems$`4`)),])
+  
+  #Now add the new to this mess
+  NewTest <- MasterList[MasterList$ListAssignment %in%  ListRot[[paste("CB", CB, sep="")]][[Cond]][2], ]
+  #Get positions of new objects
+  NewPos <- sample(1:nrow(UseList), nrow(NewTest))
+  NewTest_RowName <- as.integer(rownames(NewTest))
+  UseList_RowName <- as.integer(rownames(UseList))
+  for(Pos in 1:length(NewPos)){
+    UseList_RowName <- append(UseList_RowName, NewTest_RowName[Pos], after=NewPos[Pos])
+  }
+  
+  FinalTest <- rbind(UseList, NewTest)
+  FinalTest <- FinalTest[as.character(UseList_RowName),]
+  
+  
+  
 
 
     
