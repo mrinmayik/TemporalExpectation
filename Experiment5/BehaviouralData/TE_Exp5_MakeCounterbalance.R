@@ -270,6 +270,17 @@ for(Cond in UseCondOrd){
   FinalTest <- rbind(UseList, NewTest)
   FinalTest <- FinalTest[as.character(UseList_RowName),]
   
+  #Assign conditions based on the ListRotation list
+  FinalTest[FinalTest$ListAssignment == ListRot[[paste("CB", CB, sep="")]][[Cond]][1], "ListType"] <- "Old"
+  FinalTest[FinalTest$ListAssignment == ListRot[[paste("CB", CB, sep="")]][[Cond]][2], "ListType"] <- "New" 
+  #This is not required. Just leaving it in here for backwards compatibilty during analysis
+  FinalTest$Condition <- FinalTest$ListType
+  FinalTest$Picture <- FinalTest$Scenes
+  FinalTest$Block <- Cond
+  FinalTest$Trial <- 1:nrow(FinalTest)
+  
+  
+  
   
   
 
