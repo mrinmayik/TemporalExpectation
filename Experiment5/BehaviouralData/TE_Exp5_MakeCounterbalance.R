@@ -124,7 +124,7 @@ ISIComboDict <- read.xlsx(paste(BasePath, "Experiment5/Counterbalancing/Counterb
                           cols=1:5, rows=2:26, colNames=TRUE)
 
 #Change this to 1, 2, 3 and so on and so forth for different participants
-Part=1
+Part=2
 
 #Setup information about the irregular condition
 TIMethod = "Rand"
@@ -279,7 +279,17 @@ for(Cond in UseCondOrd){
   FinalTest$Block <- Cond
   FinalTest$Trial <- 1:nrow(FinalTest)
   
-  
+  FinalCB_Encode <- rbind(FinalCB_Encode, FinalEncode)
+  FinalCB_Test <- rbind(FinalCB_Test, FinalTest)
+}
+
+FinalCB_Encode$Trial <- c(1:96, 1:96)
+
+if(Save==1){
+  write.csv(FinalCB_Encode, file = paste(BasePath, "CB_Encode_", Part, "a.csv", sep=""), row.names=FALSE)
+  write.csv(FinalCB_Test, file = paste(BasePath, "CB_Test_", Part, "a.csv", sep=""), row.names=FALSE)
+}
+
   
   
   
