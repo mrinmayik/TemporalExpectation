@@ -32,10 +32,10 @@ ListRot <- list("CondNames"=list("TR"=list("TR_Old", "TR_New"),
 #Make sure that conditions and categories are evenly spread out across sets. To make sure that not all
 #4 objects in a set are eventually in the Similar condition, or that not all of the objects are Tools 
 #etc.
-#CountRows <- function(df, Col){
+CountRows <- function(df, Col){
   count(df[, Col])
 }
-#CheckCB <- function(df=NULL, Build=1) {
+CheckCB <- function(df=NULL, Build=1) {
   if(Build==1){ #This is initially building the CB
     Check <- list()
     Checked <- 0
@@ -63,7 +63,7 @@ ListRot <- list("CondNames"=list("TR"=list("TR_Old", "TR_New"),
   }
   
 }
-#CheckCB() #initialise
+CheckCB() #initialise
 
 #Make sure that after the copying and sorting the trials, the same 4 objects are presented one after another
 CheckRepetitions <- function(df){
@@ -163,6 +163,11 @@ if(Part%%2 == 0){
 }else if(Part%%2 == 1){
   UseCondOrd <- c("TR", "TI")
 }
+
+#Initialise some vectors
+FinalList <- data.frame(matrix(NA, nrow=96, ncol=5))
+names(FinalList) <- c(names(MasterList), "ListType", "Condition")
+
 
 
 
