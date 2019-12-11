@@ -40,17 +40,10 @@ CheckCB <- function(df=NULL, Build=1) {
     Check <- list()
     Checked <- 0
     #Condition per ISI is also controlled in the excel sheet
-    Check$CatPerISI <- ddply(df, c("ISIType"), CountRows, "Category")
-    Check$CatPerSet <- ddply(df, c("Set"), CountRows, "Category")
-    Check$CondPerSet <- ddply(df, c("Set"), CountRows, "Condition")
-    Check$OldPerThirds <- ddply(df[df$Condition=="Old",], c("Thirds"), CountRows, "Condition")
-    Check$SimPerThirds <- ddply(df[df$ListType=="Similar",], c("Thirds"), CountRows, "Condition")
-    Checked <- ifelse(any(any(Check$CatPerISI$freq>5),
-                          any(Check$CatPerSet$freq>=4),
-                          any(Check$CondPerSet$freq>=4),
-                          any(Check$CondPerThirds$freq>=8),
-                          any(Check$OldPerThirds$freq>=18),
-                          any(Check$SimPerThirds$freq>=10)), 1, 0)
+    Check$TypePerISI <- ddply(df, c("ISIType"), CountRows, "SceneType")
+    Check$TypePerSet <- ddply(df, c("Set"), CountRows, "SceneType")
+    Checked <- ifelse(any(any(Check$TypePerISI$freq>6),
+                          any(Check$TypePerSet$freq>3)), 1, 0)
     return(list(Checked, Check))
   }else if(Build==2){ #Only need to make sure here that the ISI are equally split across conditions in the first ISIs
     #Everything else is taken care of above
@@ -169,9 +162,90 @@ FinalList <- data.frame(matrix(NA, nrow=96, ncol=5))
 names(FinalList) <- c(names(MasterList), "ListType", "Condition")
 
 
+################################ Build the actual counterbalancing ################################
+
+#Make blank workbook
+#OutSheet <- createWorkbook()
+Count<-1
+
+FinalCB_Encode <- c()
+FinalCB_Test <- c()
+#Make encoding blocks first
+for(Cond in UseCondOrd){
+  #Subset MasterList to only include the lists that you need for this condition, for encoding 
+  #(list numbers got from the ListRotation list)
+  UseList <- MasterList[MasterList$ListAssignment %in%  ListRot[[paste("CB", CB, sep="")]][[Cond]][1], ]
+  
+  #Sanity check
+  if(nrow(UseList) > 48){
+    stop("UseList has more than 96 trials. Investigate!!!!")
+  }
+  
+  #Assign conditions based on the ListRotation list. From ListRot, get me the current CB number that I'm working with
+  #For the current condition. List rotation is setup such that the first number is always for the Old condition followed
+  #by similar and then new
+  UseList[UseList$ListAssignment == ListRot[[paste("CB", CB, sep="")]][[Cond]][1], "ListType"] <- "Old"
+  UseList[UseList$ListAssignment == ListRot[[paste("CB", CB, sep="")]][[Cond]][1], "Condition"] <- "Old"
+  
+  DoAgain <- 1
+  Count<-1
+  #Keep doing the sampling until you all conditions are satisfied
+  while(DoAgain>0){
+    Count <- Count+1
+    
+    #Choose the indices of the old (or similar) trials from the vector made from the appropriate sets. 
+    #To those rows, assign a shuffled list of objects from UseList that are supposed to be old (or similar)
+    FinalList <- UseList[sample(1:48, 48), ]
+    
+    #Add the necessary columns
+    FinalList$ISIType <- rep_len(1:4, 48)
+    FinalList$Set <- sort(rep_len(1:(48/4), 48))
+    
+    #This column will be helpful to look at if performance improves through the thirds of the encoding block,
+    #as participants learn the rhythm of presentation.
+    #It's easier to add this column through the counterbalance, rather than add it to the data, and then make errors 
+    #because of how the data is ordered
+    FinalList$Thirds <- sort(rep_len(1:3, nrow(FinalList)))
+    
+    CheckList <- CheckCB(FinalList, 1)[[2]]
+    DoAgain <- CheckCB(FinalList, 1)[[1]]
+    
+  }
+  
+  #Repeat the same thing 2 times so that each set is presented twice
+  FinalListRpt <- rbind(FinalList, FinalList)
+  FinalEncode <- FinalListRpt[order(FinalListRpt$Set), ]
+  FinalEncode$NumPres <- rep_len(c(1, 1, 1, 1, 2, 2, 2, 2), nrow(FinalEncode))
+  if(!(all(ddply(FinalEncode, c("Set"), CheckRepetitions)$V1==1))){
+    stop("Somthing wrong with how items are repeated!!!!")
+  }
+  
+  FinalEncode$Block <- Cond
+  
+  #Set regular ISIs depending on whether you're in encoding for TR or TI
+  if(Cond=="TR"){
+    FinalEncode[FinalEncode$ISIType==1, "ISI"] <- ISICombo[1]
+    FinalEncode[FinalEncode$ISIType==2, "ISI"] <- ISICombo[2]
+    FinalEncode[FinalEncode$ISIType==3, "ISI"] <- ISICombo[3]
+    FinalEncode[FinalEncode$ISIType==4, "ISI"] <- ISICombo[4]
+  }
+  else if (Cond=="TI"){
+    DoAgainTI <- 1
+    while(DoAgainTI>0){
+      FinalEncode <- ddply(FinalEncode, c("Set"), RandomiseTI, TIMethod)
+      CheckListTI <- CheckCB(FinalEncode, 2)[[2]]
+      DoAgainTI <- CheckCB(FinalEncode, 2)[[1]]
+    }
+  }
+  #This is not necessary from the presentation POV, but may be needed so that a new analysis script doesn't need to be written
+  FinalEncode[, "Picture"] <- FinalEncode[, "Scenes"]
+  
 
 
-
-
+    
+    
+    
+    
+    
 
 
