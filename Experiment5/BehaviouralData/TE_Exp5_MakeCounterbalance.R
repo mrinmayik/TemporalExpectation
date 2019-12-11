@@ -133,3 +133,40 @@ ISIComboDict <- read.xlsx(paste(BasePath, "Experiment5/Counterbalancing/Counterb
 #Change this to 1, 2, 3 and so on and so forth for different participants
 Part=1
 
+#Setup information about the irregular condition
+TIMethod = "Rand"
+TIJitters <- list("100" = 40,
+                  "500" = 80,
+                  "1000" = 80,
+                  "2000" = 80)
+#ISI Combination: Got from CounterbalancingMasterSheet (Sheet: ISIRotation). This is to make sure that not all participants
+#in the regular condition have the same ISI combination
+ISICombo <- unlist(list(ISIComboDict[ISIComboDict$Participant==Part, c("1stDelay", "2ndDelay", "3rdDelay", "4thDelay")]))
+
+
+#Setup which CB has to be run. Because it was so simple in this study, it was not added to the excel sheet
+#Also setup which condition will be run first
+#Only 4 counterbalances are used. So the CBs will be repeated for >4 participants
+if(Part%%4 %in% 1:3){
+  CB=Part%%4 
+}else if(Part%%4 == 0){
+  CB=4 
+}
+if(!(Part %in% 1:4)){
+  stop("CB number isn't correct!! Investigate!!!!")
+}
+
+#Setup which block is run first. For odd numbered participants TR is first, for even numbered participants 
+#TI is first
+if(Part%%2 == 0){
+  UseCondOrd <- c("TI", "TR")
+}else if(Part%%2 == 1){
+  UseCondOrd <- c("TR", "TI")
+}
+
+
+
+
+
+
+
