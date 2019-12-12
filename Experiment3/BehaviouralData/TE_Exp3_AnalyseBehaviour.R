@@ -102,6 +102,7 @@ for(Files in FileNames){
     print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
   }
   print(sprintf("CB%s done!!", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
+  LogData <- rbind(LogData, EncodeLog)
 }
 
 #========================== Work with Log Data ends
