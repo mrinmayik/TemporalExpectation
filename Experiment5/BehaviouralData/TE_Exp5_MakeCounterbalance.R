@@ -124,7 +124,7 @@ ISIComboDict <- read.xlsx(paste(BasePath, "Experiment5/Counterbalancing/Counterb
                           cols=1:5, rows=2:26, colNames=TRUE)
 
 #Change this to 1, 2, 3 and so on and so forth for different participants
-Part=2
+Part=16
 
 #Setup information about the irregular condition
 TIMethod = "Rand"
@@ -145,15 +145,15 @@ if(Part%%4 %in% 1:3){
 }else if(Part%%4 == 0){
   CB=4 
 }
-if(!(Part %in% 1:4)){
+if(!(CB %in% 1:4)){
   stop("CB number isn't correct!! Investigate!!!!")
 }
 
 #Setup which block is run first. For odd numbered participants TR is first, for even numbered participants 
 #TI is first
-if(Part%%2 == 0){
+if(Part%%2 == 1){
   UseCondOrd <- c("TI", "TR")
-}else if(Part%%2 == 1){
+}else if(Part%%2 == 0){
   UseCondOrd <- c("TR", "TI")
 }
 
