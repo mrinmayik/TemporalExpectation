@@ -13,19 +13,31 @@ library(ez)
 #Initialise basic stuff
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 
+Exp <- 3
+ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
-DataPath <- paste(BasePath, "Experiment/Experiment3/Data/", sep = "")
-CBPath <- paste(BasePath, "Experiment/Experiment3/Counterbalancing/", sep = "")
+DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
+CBPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Counterbalancing/", sep = "")
 
 NumBlocks <- 2
 Save=1
 
-FactorLabels <- list("Block" = list("levels"=c("TR", "TI"), 
-                                    "labels"=c("Regular", "Irregular")),
-                     "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
-                                        "labels"=c("Old", "Similar: HI", "Similar: LI", "New")))
+FactorLabels <- list("Exp3" = list("Block" = list("levels"=c("TR", "TI"), 
+                                                  "labels"=c("Regular", "Irregular")),
+                                   "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
+                                                      "labels"=c("Old", "Similar: HI", "Similar: LI", "New"))),
+                     "Exp4" = list("Block" = list("levels"=c("TR", "TI"), 
+                                                  "labels"=c("Regular", "Irregular")),
+                                   "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
+                                                      "labels"=c("Old", "Similar: HI", "Similar: LI", "New"))))
 #Excluded for incorrect timing, misunderstanding instructions
-toexclude <- c("CB1a_1", "CB3b_2", "CB3b_3", "CB9a_3")
+if(Exp==3){
+  toexclude <- c("CB1a_1", "CB3b_2", "CB3b_3", "CB9a_3")
+}else if(Exp==4){
+  toexclude <- c("CB11b_4", "CB11b_5")
+}else if(Exp==5){
+  toexclude <- c()
+}
 
 ########################## Functions ##########################
 
