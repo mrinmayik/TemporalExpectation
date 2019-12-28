@@ -501,14 +501,28 @@ CorrReg_ANOVA$ANOVA
 
 
 ##### Look at accuracy by quarts #####
-
+#Merge with encoding so that information about when the item was presented during encoding is included
 ThirdsData <- merge(TestData, EncodeData[, c("Participant", "Block", "Condition", "Items", "Thirds")], 
                       by=c("Participant", "Block", "Condition", "Items"), all.x=TRUE, all.y=TRUE)
 all(ThirdsData[as.data.frame(CheckMerge(ThirdsData))$row, "Condition"]=="New")
-ThirdsData <- TestData[!(TestData$Participant %in% toexclude), ]
+#Get rid of bad trials and participants
+#Easier to do it this was than merge with TestGoodData and deal with all the NAs
+ThirdsData <- ThirdsData[!(ThirdsData$Participant %in% toexclude), ]
 ThirdsData <- ThirdsData[ThirdsData$ExcludeTrials==FALSE, ]
+#Fill the thirds with New with new because these items were not presented during encoding
+ThirdsData[ThirdsData$Condition=="New", "Thirds"] <- "New"
+CheckMerge(ThirdsData)
 
-
+ThirdsAcc <- ddply(ThirdsData, c("Participant", "Block", "Condition", "Thirds"), summarise, 
+                   BehAcc=sum(Acc), 
+                   BehNAcc=sum(!Acc),
+                   TotalGoodTrials=sum(BehAcc, BehNAcc),
+                   IdealTrials=length(Participant),
+                   PercAcc=(BehAcc/TotalGoodTrials)*100,
+                   SC=TotalGoodTrials==IdealTrials)
+all(ThirdsAcc$SC)
+#Collapse across participants
+SummaryThirdsAcc <- ddply(ThirdsAcc, c("Block", "Condition", "Thirds"), SummaryData, "PercAcc")
 
 
 
