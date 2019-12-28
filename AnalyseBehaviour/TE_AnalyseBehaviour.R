@@ -320,12 +320,12 @@ CheckTrialNumbers(c(CheckSumTrials, CheckOldNewTrials, CheckSimTrials))
 
 #Collapse across Participants
 SummaryTestAcc <- ddply(TestAcc, c("Block", "Condition"), SummaryData, "PercAcc")
-SummaryTestAcc$Block <- factor(SummaryTestAcc$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
+SummaryTestAcc$Block <- factor(SummaryTestAcc$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
 SummaryTestAcc$Condition <- factor(SummaryTestAcc$Condition, 
-                                   levels=FactorLabels$Condition$levels, 
-                                   labels=FactorLabels$Condition$labels)
+                                   levels=FactorLabels[[ExpName]]$Condition$levels, 
+                                   labels=FactorLabels[[ExpName]]$Condition$labels)
 
-TestAccBar <-   ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) +
+TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) +
   stdbar + coord_cartesian(ylim=c(0, 95)) +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#FFC2A3", "#123C69"),
@@ -356,10 +356,10 @@ length(unique(TestGoodData$Participant))
 TestRT <- ddply(TestGoodData, c("Participant", "Block", "Condition"), SummaryData, "RT")
 #Collapse across participants
 SummaryTestRT <- ddply(TestRT, c("Block", "Condition"), SummaryData, "Mean")
-SummaryTestRT$Block <- factor(SummaryTestRT$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
+SummaryTestRT$Block <- factor(SummaryTestRT$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
 SummaryTestRT$Condition <- factor(SummaryTestRT$Condition, 
-                                   levels=FactorLabels$Condition$levels, 
-                                   labels=FactorLabels$Condition$labels)
+                                   levels=FactorLabels[[ExpName]]$Condition$levels, 
+                                   labels=FactorLabels[[ExpName]]$Condition$labels)
 
 TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Condition, y=Mean, fill=Block)) +
   stdbar +
