@@ -18,6 +18,7 @@ ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
 CBPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Counterbalancing/", sep = "")
+OutPath <- paste(BasePath, "Analysis/", sep="")
 
 NumBlocks <- 2
 Save=0
@@ -33,10 +34,13 @@ FactorLabels <- list("Exp3" = list("Block" = list("levels"=c("TR", "TI"),
 #Excluded for incorrect timing, misunderstanding instructions
 if(Exp==3){
   toexclude <- c("CB1a_1", "CB3b_2", "CB3b_3", "CB9a_3")
+  ObjDur <- 1000
 }else if(Exp==4){
   toexclude <- c("CB11b_4", "CB11b_5")
+  ObjDur <- 700
 }else if(Exp==5){
   toexclude <- c()
+  ObjDur
 }
 
 ########################## Functions ##########################
@@ -98,7 +102,7 @@ for(Files in FileNames){
   
   #In the object rows add 1000 because the object was always up for 1s
   #The fixation row has the code with all the information from the datasource. So anything WITHOUT ; is the object row
-  EncodeLog[-(grep(";", EncodeLog$Picture)), "IdealTime"] <- 1000
+  EncodeLog[-(grep(";", EncodeLog$Picture)), "IdealTime"] <- ObjDur
   #Read in the CB sheet to get time of actual ISIs
   ThisCB <- read.csv(paste(CBPath, "CB_Encode_", str_extract(Files, "[0-9]?[0-9][a-z]"), ".csv", sep=""))
   ##Add time from CB to the rows with fixation
@@ -168,7 +172,7 @@ CheckTrialNumbers(CheckTrials)
 
 #Add a column for trial duration
 EncodeData <- ddply(EncodeData, c("Participant", "Block"), AddTrialDur)
-EncodeData$IdealTrialDur <- EncodeData$ISI+1000
+EncodeData$IdealTrialDur <- EncodeData$ISI+ObjDur
 #Check if that matches up with what it should be
 EncodeData$TimeDiscrepancy <- EncodeData$IdealTrialDur - EncodeData$TrialDur
 EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>(17*2)
@@ -341,7 +345,7 @@ Acc_ANOVA <- ezANOVA(data=TestAcc, dv=PercAcc, wid=Participant, within=c(Block, 
 Acc_ANOVA$ANOVA
 
 if(Save==1){
-  jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/TestAccBar_Exp3.jpeg", BasePath), 
+  jpeg(filename=sprintf("%s/TestAccBar_Exp3.jpeg", OutPath), 
        width=2500, height=2000, res=300)
   plot(TestAccBar)
   dev.off()
