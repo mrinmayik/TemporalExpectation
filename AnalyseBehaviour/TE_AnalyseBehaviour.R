@@ -13,14 +13,14 @@ library(ez)
 #Initialise basic stuff
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 
-Exp <- 3
+Exp <- 4
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
 CBPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Counterbalancing/", sep = "")
 
 NumBlocks <- 2
-Save=1
+Save=0
 
 FactorLabels <- list("Exp3" = list("Block" = list("levels"=c("TR", "TI"), 
                                                   "labels"=c("Regular", "Irregular")),
@@ -332,8 +332,8 @@ TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) 
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Object Type", y="Percent Correct", fill="Condition") + 
-  geom_hline(yintercept = 100/3, linetype="dashed", size=1) + 
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + canvastheme
+  geom_hline(yintercept = 100/(length(FactorLabels[[ExpName]]$Condition$levels)-1), linetype="dashed", size=1) + 
+  xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
 
 #Do stats on it
 Acc_ANOVA <- ezANOVA(data=TestAcc, dv=PercAcc, wid=Participant, within=c(Block, Condition), 
@@ -368,7 +368,7 @@ TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Condition, y=Mean, fill=Block)) +
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
   labs(x="Object Type", y="Reaction Time", fill="Condition") + 
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme+ canvastheme
+  xaxistheme + yaxistheme + plottitletheme + legendtheme+ canvastheme + blankbgtheme
 
 #Do stats on it
 RT_ANOVA <- ezANOVA(data=TestRT, dv=Mean, wid=Participant, within=c(Block, Condition), 
@@ -431,7 +431,7 @@ PropRespBar <- ggplot(data=SummaryPropResp_Plot, aes(x=CondType, y=Mean, fill=Bl
                     breaks=FactorLabels[[ExpName]]$Block$labels, 
                     labels=FactorLabels[[ExpName]]$Block$labels) + 
   labs(x="Response Type", y="Mean", fill="Condition") +
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + canvastheme
+  xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
 
 
 PropResp_AOV <- PropResp[PropResp$RespType %in% c("FA"),]
@@ -490,7 +490,7 @@ CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
                     breaks=FactorLabels[[ExpName]]$Block$labels, 
                     labels=FactorLabels[[ExpName]]$Block$labels) + 
   labs(x="Condition", y="Hits - False Alarms") +
-  xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + canvastheme
+  xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
 
 
 #Do stats on it
@@ -523,8 +523,30 @@ ThirdsAcc <- ddply(ThirdsData, c("Participant", "Block", "Condition", "Thirds"),
 all(ThirdsAcc$SC)
 #Collapse across participants
 SummaryThirdsAcc <- ddply(ThirdsAcc, c("Block", "Condition", "Thirds"), SummaryData, "PercAcc")
+SummaryThirdsAcc$Block <- factor(SummaryThirdsAcc$Block, FactorLabels[[ExpName]]$Block$levels,
+                                 FactorLabels[[ExpName]]$Block$labels)
+SummaryThirdsAcc$Condition <- factor(SummaryThirdsAcc$Condition, FactorLabels[[ExpName]]$Condition$levels,
+                                     FactorLabels[[ExpName]]$Condition$labels)
 
-
+for(i in 1:3){
+  Cond <- FactorLabels[[ExpName]]$Condition$labels[i]
+  SummaryThirdsAcc_Cond <- SummaryThirdsAcc[SummaryThirdsAcc$Condition %in% c("New", Cond),]
+  
+  ThirdsCondLine <- ggplot(data=SummaryThirdsAcc_Cond, aes(x=Thirds, y=Mean, group=Block)) +
+    geom_point() + geom_line(aes(colour=Block), size=1.2) + 
+    #geom_segment(aes(x = 5, y = 40, xend = 5, yend = 85)) + 
+    geom_hline(aes(yintercept=33), linetype="dashed", size=1) +
+    geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9) +
+    coord_cartesian(ylim=c(25, 95)) +
+    ggtitle(Cond) + 
+    scale_linetype_manual(values=c("twodash", "dotted")) +
+    scale_color_manual(values=c("#FFC2A3", "#123C69")) +
+    labs(x="Thirds", y="Accuracy", colour="Block") + 
+    xaxistheme + yaxistheme + plottitletheme + legendtheme + blankbgtheme
+  
+  assign(paste("ThirdsLine_", FactorLabels[[ExpName]]$Condition$levels[i], sep=""),
+         ThirdsCondLine)
+}
 
 
 
