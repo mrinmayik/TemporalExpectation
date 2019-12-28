@@ -367,7 +367,7 @@ TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Condition, y=Mean, fill=Block)) +
   scale_fill_manual(values=c("#FFC2A3", "#123C69"),
                     breaks=FactorLabels$Block$labels, 
                     labels=FactorLabels$Block$labels) + 
-  labs(x="Object Type", y="Accuracy", fill="Condition") + 
+  labs(x="Object Type", y="Reaction Time", fill="Condition") + 
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme+ canvastheme
 
 #Do stats on it
@@ -489,7 +489,7 @@ CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
   scale_fill_manual(values=c("#FFC2A3", "#123C69"),
                     breaks=FactorLabels[[ExpName]]$Block$labels, 
                     labels=FactorLabels[[ExpName]]$Block$labels) + 
-  labs(x="Condition", y="Corrected Recognition") +
+  labs(x="Condition", y="Hits - False Alarms") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + canvastheme
 
 
@@ -497,6 +497,25 @@ CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
 CorrReg_ANOVA <- ezANOVA(data=CorrReg_Long, dv=value, wid=Participant, within=c(Block, variable), 
                          detailed=TRUE, type=2)
 CorrReg_ANOVA$ANOVA
+
+
+
+##### Look at accuracy by quarts #####
+
+ThirdsData <- merge(TestData, EncodeData[, c("Participant", "Block", "Condition", "Items", "Thirds")], 
+                      by=c("Participant", "Block", "Condition", "Items"), all.x=TRUE, all.y=TRUE)
+all(ThirdsData[as.data.frame(CheckMerge(ThirdsData))$row, "Condition"]=="New")
+ThirdsData <- TestData[!(TestData$Participant %in% toexclude), ]
+ThirdsData <- ThirdsData[ThirdsData$ExcludeTrials==FALSE, ]
+
+
+
+
+
+
+
+
+
 
 
 
