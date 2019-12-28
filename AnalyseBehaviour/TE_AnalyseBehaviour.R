@@ -421,15 +421,15 @@ SummaryPropResp$CondType <- paste(SummaryPropResp$Condition, SummaryPropResp$Res
 SummaryPropResp_Plot <- SummaryPropResp[SummaryPropResp$RespType %in% c("FA", "Hit"), ]
 SummaryPropResp_Plot$CondType <- factor(SummaryPropResp_Plot$CondType, levels=c("OldHit", "Similar_HIFA", "Similar_LIFA", "NewFA"),
                                         labels=c("Hits", "False Alarm: \nSimilar HI", "False Alarm: \nSimilar LI", "False Alarm: \n New"))
-SummaryPropResp_Plot$Block <- factor(SummaryPropResp_Plot$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
+SummaryPropResp_Plot$Block <- factor(SummaryPropResp_Plot$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
 
 
 PropRespBar <- ggplot(data=SummaryPropResp_Plot, aes(x=CondType, y=Mean, fill=Block)) +
   stdbar + 
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#FFC2A3", "#123C69"),
-                    breaks=FactorLabels$Block$labels, 
-                    labels=FactorLabels$Block$labels) + 
+                    breaks=FactorLabels[[ExpName]]$Block$labels, 
+                    labels=FactorLabels[[ExpName]]$Block$labels) + 
   labs(x="Response Type", y="Mean", fill="Condition") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + canvastheme
 
@@ -456,14 +456,14 @@ CorrReg <- ddply(PropResp, c("Participant", "Block"), summarise,
                        CorrReg_SimLI=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="Similar_LI" & RespType=="FA"])
 
 SummaryCorrReg_NoSim <- ddply(CorrReg, c("Block"), SummaryData, "CorrReg_New")
-SummaryCorrReg_NoSim$Block <- factor(SummaryCorrReg_NoSim$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
+SummaryCorrReg_NoSim$Block <- factor(SummaryCorrReg_NoSim$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
 
 CorrReg_NoSimBar <- ggplot(data=SummaryCorrReg_NoSim, aes(x=Block, y=Mean, fill=Block)) +
   stdbar + coord_cartesian(ylim=c(0, 0.85)) + 
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#FFC2A3", "#123C69"),
-                    breaks=FactorLabels$Block$labels, 
-                    labels=FactorLabels$Block$labels) + 
+                    breaks=FactorLabels[[ExpName]]$Block$labels, 
+                    labels=FactorLabels[[ExpName]]$Block$labels) + 
   labs(x="Condition", y="Hits – False Alarms") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + theme(legend.position = "None") + canvastheme
 
@@ -479,16 +479,16 @@ if(Save==1){
 CorrReg_Long <- melt(CorrReg)
 
 SummaryCorrReg <- ddply(CorrReg_Long, c("Block", "variable"), SummaryData, "value")
-SummaryCorrReg$Block <- factor(SummaryCorrReg$Block, levels=FactorLabels$Block$levels, labels=FactorLabels$Block$labels)
+SummaryCorrReg$Block <- factor(SummaryCorrReg$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
 SummaryCorrReg$variable <- factor(SummaryCorrReg$variable, levels=c("CorrReg_SimHI", "CorrReg_SimLI", "CorrReg_New"), 
-                                  labels=FactorLabels$Condition$labels[2:4])
+                                  labels=FactorLabels[[ExpName]]$Condition$labels[2:4])
 
 CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#FFC2A3", "#123C69"),
-                    breaks=FactorLabels$Block$labels, 
-                    labels=FactorLabels$Block$labels) + 
+                    breaks=FactorLabels[[ExpName]]$Block$labels, 
+                    labels=FactorLabels[[ExpName]]$Block$labels) + 
   labs(x="Condition", y="Corrected Recognition") +
   xaxistheme + yaxistheme + bgtheme + plottitletheme + legendtheme + canvastheme
 
