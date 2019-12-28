@@ -13,7 +13,7 @@ library(ez)
 #Initialise basic stuff
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 
-Exp <- 4
+Exp <- 5
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -30,19 +30,45 @@ FactorLabels <- list("Exp3" = list("Block" = list("levels"=c("TR", "TI"),
                      "Exp4" = list("Block" = list("levels"=c("TR", "TI"), 
                                                   "labels"=c("Regular", "Irregular")),
                                    "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
-                                                      "labels"=c("Old", "Similar: HI", "Similar: LI", "New"))))
+                                                      "labels"=c("Old", "Similar: HI", "Similar: LI", "New"))),
+                     "Exp5" = list("Block" = list("levels"=c("TR", "TI"), 
+                                                  "labels"=c("Regular", "Irregular")),
+                                   "Condition" = list("levels"=c("Old", "New"), 
+                                                      "labels"=c("Old", "New"))))
 #Excluded for incorrect timing, misunderstanding instructions
 if(Exp==3){
   toexclude <- c("CB1a_1", "CB3b_2", "CB3b_3", "CB9a_3")
   ObjDur <- 1000
+  TotalEncodeTrials <- 192
+  TotalTestTrials <- 144
+  EncodeCollNames <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", 
+                       "ISIType", "Set", "Thirds", "NumPres", "Block", "ISI", "Picture", "ObjectTime")
+  ColOrd_Encode <- c("Participant", "ListAssignment", "ListType", "Thirds", "Set", "NumPres", "Trial", "Block", "Condition", 
+                     "Category", "Items", "ISIType", "ISI", "Picture", "ObjectTime")
 }else if(Exp==4){
   toexclude <- c("CB11b_4", "CB11b_5")
   ObjDur <- 700
+  TotalEncodeTrials <- 192
+  TotalTestTrials <- 144
+  EncodeCollNames <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", 
+                       "ISIType", "Set", "Thirds", "NumPres", "Block", "ISI", "Picture", "ObjectTime")
+  ColOrd_Encode <- c("Participant", "ListAssignment", "ListType", "Thirds", "Set", "NumPres", "Trial", "Block", "Condition", 
+                     "Category", "Items", "ISIType", "ISI", "Picture", "ObjectTime")
 }else if(Exp==5){
   toexclude <- c()
-  ObjDur
+  ObjDur <- 700
+  TotalEncodeTrials <- 96
+  TotalTestTrials <- 96
+  EncodeColNames <- c("Category", "Items", "ListAssignment", "ListType", "Condition", "ISIType", "Set", "Thirds", 
+                      "NumPres", "Block", "ISI", "Picture", "Trial", "ObjectTime")
+  TestColNames <- c("Category", "Items", "ListAssignment", "ListType", "Condition", "Picture", "Block", "Trial", "ObjectTime",
+                    "Resp", "RespTime")
+  ColOrd_Encode <- c("Participant", "ListAssignment", "ListType", "Thirds", "Set", "NumPres", "Trial", "Block", "Condition", 
+                     "Category", "Items", "ISIType", "ISI", "Picture", "ObjectTime")
+  ColdOrd_Test <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
+                    "Items", "ObjectTime", "Resp", "RespTime")
 }
-
+#
 ########################## Functions ##########################
 
 #Add a column that records the ISI that preceded a particular item. This will be ddplied with Partcipant and block
@@ -96,7 +122,7 @@ for(Files in FileNames){
   
   #This should leave us with only the encode trials 192*2*2= 192 trials* 2 blocks * 2 rows per trial (Fix+object)
   #If this is not correct halt the execution
-  if(!(nrow(EncodeLog)==192*2*2)){
+  if(!(nrow(EncodeLog)==TotalEncodeTrials*2*2)){
     stop(sprintf("Row numbers don't add up for %s!!", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
   }
   
@@ -114,7 +140,7 @@ for(Files in FileNames){
   
   #Print warning if there is a discrepancy in any trial that isn't the last trial of the block.
   #The last trial should have 192 as trial number in the event code
-  if(!(all(grep("192", EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
+  if(!(all(grep(TotalTrials, EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
     print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
   }
   print(sprintf("CB%s done!!", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
@@ -131,16 +157,11 @@ for(Files in FileNames){
 FileNames <- list.files(path=DataPath, pattern="*Encode.txt",
                         full.names=TRUE)
 
-ColOrd <- c("Participant", "ListAssignment", "ListType", "Thirds", "Set", "NumPres", "Trial", "Block", "Condition", "Category", 
-            "Items", "ISIType", "ISI", "Picture", "ObjectTime")
-
-
 EncodeData=c()
 #Read in data
 for(Files in FileNames){
   PartData <- read_delim(Files, delim=";", skip=1, col_names=FALSE)
-  names(PartData) <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", 
-                       "ISIType", "Set", "Thirds", "NumPres", "Block", "ISI", "Picture", "ObjectTime")
+  names(PartData) <- EncodeColNames
   PartID <- paste(strsplit(strsplit(Files, "//")[[1]][2], "_")[[1]][1:2], collapse="_")
   PartData$Participant <- PartID
   CBName <- str_extract(PartID, "[0-9]?[0-9][a-z]")
@@ -157,13 +178,13 @@ for(Files in FileNames){
            all(ThisCB$ISI_CB==ThisCB$ISI_Data)))){
     stop(sprintf("Data does not match up with CB in %s. INVESTIGATE!!!", PartID))
   }
-  EncodeData <- rbind(EncodeData, PartData[, ColOrd])
+  EncodeData <- rbind(EncodeData, PartData[, ColOrd_Encode])
 }
 
 #Make sure the right number of trials are present for everyone
 (EncodePerParticipant <- ddply(EncodeData, c("Participant", "Block"), summarise,
                                Trials = length(Participant), 
-                               IdealTrials = 192,
+                               IdealTrials = TotalEncodeTrials,
                                SC = Trials==IdealTrials))
 
 length(unique(EncodeData$Participant))
@@ -179,9 +200,9 @@ EncodeData$TimeProblem <- abs(EncodeData$TimeDiscrepancy)>(17*2)
 
 View(EncodeData[EncodeData$TimeProblem==TRUE,])
 #Any wrong times that aren't the last trial for a block?
-View(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==192)), ])
+View(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==TotalEncodeTrials)), ])
 #Get rid of participants that are problematic in terms of timing
-toexclude <- c(toexclude, unique(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==192)), "Participant"]))
+toexclude <- c(toexclude, unique(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==TotalEncodeTrials)), "Participant"]))
 
 EncodeData <- EncodeData[!(EncodeData$Participant %in% toexclude), ]
 
@@ -195,13 +216,11 @@ EncodeData <- EncodeData[!(EncodeData$Participant %in% toexclude), ]
 FileNames <- list.files(path=DataPath, pattern="*Test.txt",
                         full.names=TRUE)
 
-ColdOrd <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
-             "Items", "ObjectTime", "Resp", "RespTime")
-
 TestData=c()
 #Read in data
 for(Files in FileNames){
-  PartData <- read_delim(Files, delim=";", skip=0, col_names=TRUE)
+  PartData <- read_delim(Files, delim=";", skip=1, col_names=FALSE)
+  names(PartData) <- TestColNames
   
 #  #Coding this "absolutely" to make sure it's not removing any random trials
 #  if(all(PartData[143:144, "Items"]==PartData[145:146, "Items"])){
@@ -228,12 +247,12 @@ for(Files in FileNames){
     stop(sprintf("Data does not match up with CB in %s. INVESTIGATE!!!", PartID))
   }
 
-  TestData <- rbind(TestData, PartData[, ColdOrd])
+  TestData <- rbind(TestData, PartData[, ColdOrd_Test])
 }
 
 (TestPerParticipant <- ddply(TestData, c("Participant", "Block"), summarise,
                              Trials = length(Participant), 
-                             IdealTrials = 144,
+                             IdealTrials = TotalTestTrials,
                              SC = Trials==IdealTrials))
 
 (CheckTrials <- all(TestPerParticipant$SC))
@@ -247,7 +266,7 @@ CheckTrialNumbers(CheckParts)
 #Just order the rows
 TestData <- TestData[order(TestData$Participant, TestData$Block, TestData$Trial), ]
 #Get the codes of what the correct answer should be
-TestData$CorrCode <- factor(TestData$ListType, levels=c("Old", "Similar", "New"), labels=c(1, 2, 3))
+TestData$CorrCode <- factor(TestData$ListType, levels=FactorLabels[[ExpName]]$Condition$levels, labels=1:(length(FactorLabels[[ExpName]]$Condition$levels)))
 
 ####Figure out bad subjects
 #Based on accuracy
@@ -333,8 +352,8 @@ TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) 
   stdbar + coord_cartesian(ylim=c(0, 95)) +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#FFC2A3", "#123C69"),
-                    breaks=FactorLabels$Block$labels, 
-                    labels=FactorLabels$Block$labels) + 
+                    breaks=FactorLabels[[ExpName]]$Block$labels, 
+                    labels=FactorLabels[[ExpName]]$Block$labels) + 
   labs(x="Object Type", y="Percent Correct", fill="Condition") + 
   geom_hline(yintercept = 100/(length(FactorLabels[[ExpName]]$Condition$levels)-1), linetype="dashed", size=1) + 
   xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
