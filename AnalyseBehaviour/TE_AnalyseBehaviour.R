@@ -26,34 +26,47 @@ Save=0
 FactorLabels <- list("Exp3" = list("Block" = list("levels"=c("TR", "TI"), 
                                                   "labels"=c("Regular", "Irregular")),
                                    "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
-                                                      "labels"=c("Old", "Similar: HI", "Similar: LI", "New"))),
+                                                      "labels"=c("Old", "Similar: HI", "Similar: LI", "New")),
+                                   "Resp" = list("levels"=c("Old", "Similar", "New"),
+                                                 "labels"=c(1, 2, 3))),
                      "Exp4" = list("Block" = list("levels"=c("TR", "TI"), 
                                                   "labels"=c("Regular", "Irregular")),
                                    "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
-                                                      "labels"=c("Old", "Similar: HI", "Similar: LI", "New"))),
+                                                      "labels"=c("Old", "Similar: HI", "Similar: LI", "New")),
+                                   "Resp" = list("levels"=c("Old", "Similar", "New"),
+                                                 "labels"=c(1, 2, 3))),
                      "Exp5" = list("Block" = list("levels"=c("TR", "TI"), 
                                                   "labels"=c("Regular", "Irregular")),
                                    "Condition" = list("levels"=c("Old", "New"), 
-                                                      "labels"=c("Old", "New"))))
+                                                      "labels"=c("Old", "New")),
+                                   "Resp" = list("levels"=c("Old", "New"),
+                                                 "labels"=c(1, 2))))
+
 #Excluded for incorrect timing, misunderstanding instructions
 if(Exp==3){
   toexclude <- c("CB1a_1", "CB3b_2", "CB3b_3", "CB9a_3")
   ObjDur <- 1000
   TotalEncodeTrials <- 192
   TotalTestTrials <- 144
-  EncodeCollNames <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", 
+  EncodeColNames <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", 
                        "ISIType", "Set", "Thirds", "NumPres", "Block", "ISI", "Picture", "ObjectTime")
   ColOrd_Encode <- c("Participant", "ListAssignment", "ListType", "Thirds", "Set", "NumPres", "Trial", "Block", "Condition", 
                      "Category", "Items", "ISIType", "ISI", "Picture", "ObjectTime")
+  TestColNames <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", "Block", "Picture", "ObjectTime", "Resp", "RespTime")
+  ColdOrd_Test <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
+                    "Items", "ObjectTime", "Resp", "RespTime")
 }else if(Exp==4){
   toexclude <- c("CB11b_4", "CB11b_5")
   ObjDur <- 700
   TotalEncodeTrials <- 192
   TotalTestTrials <- 144
-  EncodeCollNames <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", 
+  EncodeColNames <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", 
                        "ISIType", "Set", "Thirds", "NumPres", "Block", "ISI", "Picture", "ObjectTime")
   ColOrd_Encode <- c("Participant", "ListAssignment", "ListType", "Thirds", "Set", "NumPres", "Trial", "Block", "Condition", 
                      "Category", "Items", "ISIType", "ISI", "Picture", "ObjectTime")
+  TestColNames <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", "Block", "Picture", "ObjectTime", "Resp", "RespTime")
+  ColdOrd_Test <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
+                    "Items", "ObjectTime", "Resp", "RespTime")
 }else if(Exp==5){
   toexclude <- c()
   ObjDur <- 700
@@ -140,7 +153,7 @@ for(Files in FileNames){
   
   #Print warning if there is a discrepancy in any trial that isn't the last trial of the block.
   #The last trial should have 192 as trial number in the event code
-  if(!(all(grep(TotalTrials, EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
+  if(!(all(grep(TotalEncodeTrials, EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
     print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
   }
   print(sprintf("CB%s done!!", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
@@ -266,7 +279,7 @@ CheckTrialNumbers(CheckParts)
 #Just order the rows
 TestData <- TestData[order(TestData$Participant, TestData$Block, TestData$Trial), ]
 #Get the codes of what the correct answer should be
-TestData$CorrCode <- factor(TestData$ListType, levels=FactorLabels[[ExpName]]$Condition$levels, labels=1:(length(FactorLabels[[ExpName]]$Condition$levels)))
+TestData$CorrCode <- factor(TestData$ListType, levels=FactorLabels[[ExpName]]$Resp$levels, labels=FactorLabels[[ExpName]]$Resp$labels)
 
 ####Figure out bad subjects
 #Based on accuracy
@@ -388,8 +401,8 @@ TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Condition, y=Mean, fill=Block)) +
   stdbar +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
   scale_fill_manual(values=c("#FFC2A3", "#123C69"),
-                    breaks=FactorLabels$Block$labels, 
-                    labels=FactorLabels$Block$labels) + 
+                    breaks=FactorLabels[[ExpName]]$Block$labels, 
+                    labels=FactorLabels[[ExpName]]$Block$labels) + 
   labs(x="Object Type", y="Reaction Time", fill="Condition") + 
   xaxistheme + yaxistheme + plottitletheme + legendtheme+ canvastheme + blankbgtheme
 
@@ -460,8 +473,13 @@ PropRespBar <- ggplot(data=SummaryPropResp_Plot, aes(x=CondType, y=Mean, fill=Bl
 PropResp_AOV <- PropResp[PropResp$RespType %in% c("FA"),]
 
 #Do stats on it
-PropResp_ANOVA <- ezANOVA(data=PropResp_AOV, dv=PropResp, wid=Participant, within=c(Block, Condition), 
+if(Exp==5){
+  PropResp_ANOVA <- ezANOVA(data=PropResp_AOV, dv=PropResp, wid=Participant, within=c(Block), 
+                            detailed=TRUE, type=2)
+}else{
+  PropResp_ANOVA <- ezANOVA(data=PropResp_AOV, dv=PropResp, wid=Participant, within=c(Block, Condition), 
                     detailed=TRUE, type=2)
+}
 PropResp_ANOVA$ANOVA
 
 if(Save==1){
@@ -473,10 +491,15 @@ if(Save==1){
 
 #Only look at new and old trials to replicate analysis from Ward & Jones (2019)
 #PropResp_NoSim <- PropResp[PropResp$Condition %in% c("Old", "New"), ]
-CorrReg <- ddply(PropResp, c("Participant", "Block"), summarise, 
+if(Exp==5){
+  CorrReg <- ddply(PropResp, c("Participant", "Block"), summarise, 
+                   CorrReg_New=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="New" & RespType=="FA"])
+}else{
+  CorrReg <- ddply(PropResp, c("Participant", "Block"), summarise, 
                        CorrReg_New=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="New" & RespType=="FA"],
                        CorrReg_SimHI=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="Similar_HI" & RespType=="FA"],
                        CorrReg_SimLI=PropResp[Condition=="Old" & RespType=="Hit"]-PropResp[Condition=="Similar_LI" & RespType=="FA"])
+}
 
 SummaryCorrReg_NoSim <- ddply(CorrReg, c("Block"), SummaryData, "CorrReg_New")
 SummaryCorrReg_NoSim$Block <- factor(SummaryCorrReg_NoSim$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
@@ -503,8 +526,10 @@ CorrReg_Long <- melt(CorrReg)
 
 SummaryCorrReg <- ddply(CorrReg_Long, c("Block", "variable"), SummaryData, "value")
 SummaryCorrReg$Block <- factor(SummaryCorrReg$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
-SummaryCorrReg$variable <- factor(SummaryCorrReg$variable, levels=c("CorrReg_SimHI", "CorrReg_SimLI", "CorrReg_New"), 
-                                  labels=FactorLabels[[ExpName]]$Condition$labels[2:4])
+if(Exp != 5){
+  SummaryCorrReg$variable <- factor(SummaryCorrReg$variable, levels=c("CorrReg_SimHI", "CorrReg_SimLI", "CorrReg_New"), 
+                                    labels=FactorLabels[[ExpName]]$Condition$labels[2:4])
+}
 
 CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
   stdbar +
@@ -517,8 +542,13 @@ CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
 
 
 #Do stats on it
-CorrReg_ANOVA <- ezANOVA(data=CorrReg_Long, dv=value, wid=Participant, within=c(Block, variable), 
-                         detailed=TRUE, type=2)
+if(Exp==5){
+  CorrReg_ANOVA <- ezANOVA(data=CorrReg_Long, dv=value, wid=Participant, within=c(Block), 
+                           detailed=TRUE, type=2)
+}else{
+  CorrReg_ANOVA <- ezANOVA(data=CorrReg_Long, dv=value, wid=Participant, within=c(Block, variable), 
+                           detailed=TRUE, type=2)
+}
 CorrReg_ANOVA$ANOVA
 
 
@@ -551,7 +581,7 @@ SummaryThirdsAcc$Block <- factor(SummaryThirdsAcc$Block, FactorLabels[[ExpName]]
 SummaryThirdsAcc$Condition <- factor(SummaryThirdsAcc$Condition, FactorLabels[[ExpName]]$Condition$levels,
                                      FactorLabels[[ExpName]]$Condition$labels)
 
-for(i in 1:3){
+for(i in 1:(length(FactorLabels[[ExpName]]$Condition$labels))-1){
   Cond <- FactorLabels[[ExpName]]$Condition$labels[i]
   SummaryThirdsAcc_Cond <- SummaryThirdsAcc[SummaryThirdsAcc$Condition %in% c("New", Cond),]
   
