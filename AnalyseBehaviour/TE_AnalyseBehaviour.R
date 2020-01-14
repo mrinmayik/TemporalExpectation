@@ -55,6 +55,7 @@ if(Exp==3){
   TestColNames <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", "Block", "Picture", "ObjectTime", "Resp", "RespTime")
   ColdOrd_Test <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
                     "Items", "ObjectTime", "Resp", "RespTime")
+  NumCond <- 3
 }else if(Exp==4){
   toexclude <- c("CB11b_4", "CB11b_5")
   ObjDur <- 700
@@ -67,6 +68,7 @@ if(Exp==3){
   TestColNames <- c("Trial", "Category", "Items", "ListAssignment", "ListType", "Condition", "Block", "Picture", "ObjectTime", "Resp", "RespTime")
   ColdOrd_Test <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
                     "Items", "ObjectTime", "Resp", "RespTime")
+  NumCond <- 3
 }else if(Exp==5){
   toexclude <- c()
   ObjDur <- 700
@@ -80,6 +82,7 @@ if(Exp==3){
                      "Category", "Items", "ISIType", "ISI", "Picture", "ObjectTime")
   ColdOrd_Test <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
                     "Items", "ObjectTime", "Resp", "RespTime")
+  NumCond <- 2
 }
 #
 ########################## Functions ##########################
@@ -368,7 +371,7 @@ TestAccBar <- ggplot(data=SummaryTestAcc, aes(x=Condition, y=Mean, fill=Block)) 
                     breaks=FactorLabels[[ExpName]]$Block$labels, 
                     labels=FactorLabels[[ExpName]]$Block$labels) + 
   labs(x="Object Type", y="Percent Correct", fill="Condition") + 
-  geom_hline(yintercept = 100/(length(FactorLabels[[ExpName]]$Condition$levels)-1), linetype="dashed", size=1) + 
+  geom_hline(yintercept = 100/NumCond, linetype="dashed", size=1) + 
   xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
 
 #Do stats on it
