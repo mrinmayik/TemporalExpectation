@@ -424,14 +424,22 @@ if(Save==1){
 ##### Calculate hits, FAs #####
 
 TestGoodData[TestGoodData$ListType=="Old" & TestGoodData$Resp==1, "RespType"] <- "Hit"
-TestGoodData[TestGoodData$ListType=="Similar" & TestGoodData$Resp==2, "RespType"] <- "CR"
-TestGoodData[TestGoodData$ListType=="New" & TestGoodData$Resp==3, "RespType"] <- "CR"
+if(Exp %in% c(3, 4)){
+  TestGoodData[TestGoodData$ListType=="Similar" & TestGoodData$Resp==2, "RespType"] <- "CR"
+  TestGoodData[TestGoodData$ListType=="New" & TestGoodData$Resp==3, "RespType"] <- "CR"
+  
+  TestGoodData[TestGoodData$ListType=="Old" & (TestGoodData$Resp %in% c(2, 3)), "RespType"] <- "Miss"
+  TestGoodData[(TestGoodData$ListType %in% c("Similar", "New")) & TestGoodData$Resp==1, "RespType"] <- "FA"
+  
+  TestGoodData[(TestGoodData$ListType %in% c("Similar")) & TestGoodData$Resp==3, "RespType"] <- "Incorr"
+  TestGoodData[(TestGoodData$ListType %in% c("New")) & TestGoodData$Resp==2, "RespType"] <- "Incorr"
+}else if(Exp==5){
+  TestGoodData[TestGoodData$ListType=="New" & TestGoodData$Resp==2, "RespType"] <- "CR"
+  
+  TestGoodData[TestGoodData$ListType=="Old" & TestGoodData$Resp==2, "RespType"] <- "Miss"
+  TestGoodData[TestGoodData$ListType=="New" & TestGoodData$Resp==1, "RespType"] <- "FA"
+}
 
-TestGoodData[TestGoodData$ListType=="Old" & (TestGoodData$Resp %in% c(2, 3)), "RespType"] <- "Miss"
-TestGoodData[(TestGoodData$ListType %in% c("Similar", "New")) & TestGoodData$Resp==1, "RespType"] <- "FA"
-
-TestGoodData[(TestGoodData$ListType %in% c("Similar")) & TestGoodData$Resp==3, "RespType"] <- "Incorr"
-TestGoodData[(TestGoodData$ListType %in% c("New")) & TestGoodData$Resp==2, "RespType"] <- "Incorr"
 CheckMerge(TestGoodData)
 
 #drop=FALSE makes sure that every level of the independent variables will be accounted for
