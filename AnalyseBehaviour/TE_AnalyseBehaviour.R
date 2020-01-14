@@ -532,24 +532,24 @@ if(Save==1){
 }
 
 
-#Look at corrected recognition in similar
-CorrReg_Long <- melt(CorrReg)
-
-SummaryCorrReg <- ddply(CorrReg_Long, c("Block", "variable"), SummaryData, "value")
-SummaryCorrReg$Block <- factor(SummaryCorrReg$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
 if(Exp != 5){
+  #Look at corrected recognition in similar for experiments 3 and 4
+  CorrReg_Long <- melt(CorrReg)
+  
+  SummaryCorrReg <- ddply(CorrReg_Long, c("Block", "variable"), SummaryData, "value")
+  SummaryCorrReg$Block <- factor(SummaryCorrReg$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
   SummaryCorrReg$variable <- factor(SummaryCorrReg$variable, levels=c("CorrReg_SimHI", "CorrReg_SimLI", "CorrReg_New"), 
                                     labels=FactorLabels[[ExpName]]$Condition$labels[2:4])
+  CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
+    stdbar +
+    geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+    scale_fill_manual(values=c("#FFC2A3", "#123C69"),
+                      breaks=FactorLabels[[ExpName]]$Block$labels, 
+                      labels=FactorLabels[[ExpName]]$Block$labels) + 
+    labs(x="Condition", y="Hits - False Alarms") +
+    xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+  
 }
-
-CorrRegBar <- ggplot(data=SummaryCorrReg, aes(x=variable, y=Mean, fill=Block)) +
-  stdbar +
-  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  scale_fill_manual(values=c("#FFC2A3", "#123C69"),
-                    breaks=FactorLabels[[ExpName]]$Block$labels, 
-                    labels=FactorLabels[[ExpName]]$Block$labels) + 
-  labs(x="Condition", y="Hits - False Alarms") +
-  xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
 
 
 #Do stats on it
@@ -592,7 +592,7 @@ SummaryThirdsAcc$Block <- factor(SummaryThirdsAcc$Block, FactorLabels[[ExpName]]
 SummaryThirdsAcc$Condition <- factor(SummaryThirdsAcc$Condition, FactorLabels[[ExpName]]$Condition$levels,
                                      FactorLabels[[ExpName]]$Condition$labels)
 
-for(i in 1:(length(FactorLabels[[ExpName]]$Condition$labels))-1){
+for(i in 1:((length(FactorLabels[[ExpName]]$Condition$labels))-1)){
   Cond <- FactorLabels[[ExpName]]$Condition$labels[i]
   SummaryThirdsAcc_Cond <- SummaryThirdsAcc[SummaryThirdsAcc$Condition %in% c("New", Cond),]
   
