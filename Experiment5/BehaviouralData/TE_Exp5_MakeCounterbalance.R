@@ -121,10 +121,10 @@ MasterList <- read.xlsx(paste(BasePath, "Experiment5/Counterbalancing/Counterbal
                         cols=1:3, colNames=TRUE)
 
 ISIComboDict <- read.xlsx(paste(BasePath, "Experiment5/Counterbalancing/Counterbalancing_MasterSheet_Exp5.xlsx", sep=""), sheet="ISIRotation", 
-                          cols=1:5, rows=2:26, colNames=TRUE)
+                          cols=1:5, rows=2:34, colNames=TRUE)
 
 #Change this to 1, 2, 3 and so on and so forth for different participants
-Part=16
+Part=32
 
 #Setup information about the irregular condition
 TIMethod = "Rand"
