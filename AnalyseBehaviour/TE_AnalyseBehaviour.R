@@ -531,10 +531,10 @@ if(Save==1){
   dev.off()
 }
 
-
+CorrReg_Long <- melt(CorrReg)
 if(Exp != 5){
   #Look at corrected recognition in similar for experiments 3 and 4
-  CorrReg_Long <- melt(CorrReg)
+  
   
   SummaryCorrReg <- ddply(CorrReg_Long, c("Block", "variable"), SummaryData, "value")
   SummaryCorrReg$Block <- factor(SummaryCorrReg$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
