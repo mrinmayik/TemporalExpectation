@@ -13,7 +13,7 @@ library(ez)
 #Initialise basic stuff
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 
-Exp <- 5
+Exp <- 3
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -22,6 +22,7 @@ OutPath <- paste(BasePath, "Analysis/", sep="")
 
 NumBlocks <- 2
 Save=0
+ExcludeTrials <- FALSE
 
 FactorLabels <- list("Exp3" = list("Block" = list("levels"=c("TR", "TI"), 
                                                   "labels"=c("Regular", "Irregular")),
@@ -221,6 +222,9 @@ View(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==TotalEn
 toexclude <- c(toexclude, unique(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==TotalEncodeTrials)), "Participant"]))
 
 EncodeData <- EncodeData[!(EncodeData$Participant %in% toexclude), ]
+unique(EncodeData$Participant)
+length(unique(EncodeData$Participant))
+
 
 #========================== Work with Encode Data Ends 
 
@@ -303,6 +307,7 @@ LowCutoffAcc  <- quantile(PartAcc$PercAcc, 0.25)-(2*IQR(PartAcc$PercAcc))
 HighCutoffAcc  <- quantile(PartAcc$PercAcc, 0.75)+(2*IQR(PartAcc$PercAcc))
 
 PartAcc$Exclude <- (PartAcc$PercAcc<=LowCutoffAcc) #| (PartAcc$PercAcc>=(TotalAcc$Mean+(2*TotalAcc$SD)))
+any(PartAcc$Exclude)
 toexclude <- c(toexclude, PartAcc[PartAcc$Exclude==TRUE, "Participant"])
 
 #Based on RT
@@ -325,7 +330,9 @@ LowCutoffRT  <- quantile(PartRT$PercEx, 0.25)-(2*IQR(PartRT$PercEx))
 HighCutoffRT  <- quantile(PartRT$PercEx, 0.75)+(2*IQR(PartRT$PercEx))
 
 PartRT$Exclude <- (PartRT$PercEx>=HighCutoffRT) #| (PartAcc$PercAcc>=(TotalAcc$Mean+(2*TotalAcc$SD)))
-toexclude <- c(toexclude, PartRT[PartRT$Exclude==TRUE, "Participant"])
+any(PartRT$Exclude)
+#This is just to look at RT distribution. We are not excluding people for it
+#toexclude <- c(toexclude, PartRT[PartRT$Exclude==TRUE, "Participant"])
 
 
 ##### Look at accuracy
@@ -336,7 +343,11 @@ TestGoodData <- TestData[!(TestData$Participant %in% toexclude), ]
 #Save out how many trials are excluded to make sure the total number of trials is correct
 NumExcludedTrials <- ddply(TestGoodData, c("Participant", "Block", "Condition"), summarise, 
                            NumExcludedTrials=sum(ExcludeTrials))
-TestGoodData <- TestGoodData[TestGoodData$ExcludeTrials==FALSE, ]
+if(ExcludeTrials==TRUE){
+  TestGoodData <- TestGoodData[TestGoodData$ExcludeTrials==FALSE, ]
+}else if(ExcludeTrials==FALSE){
+  TestGoodData <- TestGoodData
+}
 unique(TestGoodData$Participant)
 length(unique(TestGoodData$Participant))
 
