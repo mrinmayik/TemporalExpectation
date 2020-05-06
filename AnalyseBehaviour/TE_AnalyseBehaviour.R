@@ -13,7 +13,7 @@ library(ez)
 #Initialise basic stuff
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 
-Exp <- 3
+Exp <- 5
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -364,8 +364,13 @@ TestAcc <- merge(TestAcc, NumExcludedTrials, by=c("Participant", "Block", "Condi
 TestAcc$TotalBehTrials <- TestAcc$BehAcc+TestAcc$BehNAcc+TestAcc$NumExcludedTrials
 
 (CheckSumTrials <- all(TestAcc$SC))
-(CheckOldNewTrials <- all(TestAcc[TestAcc$Condition %in% c("Old", "New"), "TotalBehTrials"]==48))
-(CheckSimTrials <- all(TestAcc[TestAcc$Condition %in% c("Similar_HI", "Similar_LI"), "TotalBehTrials"]==24))
+if(ExcludeTrials==TRUE){
+  (CheckOldNewTrials <- all(TestAcc[TestAcc$Condition %in% c("Old", "New"), "TotalBehTrials"]==48))
+  (CheckSimTrials <- all(TestAcc[TestAcc$Condition %in% c("Similar_HI", "Similar_LI"), "TotalBehTrials"]==24))
+}else if(ExcludeTrials==FALSE){
+  (CheckOldNewTrials <- all(TestAcc[TestAcc$Condition %in% c("Old", "New"), "TotalGoodTrials"]==48))
+  (CheckSimTrials <- all(TestAcc[TestAcc$Condition %in% c("Similar_HI", "Similar_LI"), "TotalGoodTrials"]==24))
+}
 CheckTrialNumbers(c(CheckSumTrials, CheckOldNewTrials, CheckSimTrials))
 
 #Collapse across Participants
@@ -517,12 +522,13 @@ if(Save==1){
 #qnorm on these values gives -Inf and Inf, respectively.
 #Make a separate columns for adjusted values so that the ones with zero can be counted
 PropResp$AdjProp <- NA
-MaxHitRows <- (PropResp$RespType=="Hit" & PropResp$SumResp==1)
-MinFARows <- (PropResp$RespType=="FA" & PropResp$SumResp==0)
+MaxHitRows <- (PropResp$RespType=="Hit" & PropResp$PropResp==1)
+MinFARows <- (PropResp$RespType=="FA" & PropResp$PropResp==0)
 PropResp[!(MaxHitRows | MinFARows), "AdjProp"]  <- PropResp[!(MaxHitRows | MinFARows), "PropResp"] 
 #This basically changes the value of 0 FAs to 1/2 a FA as suggested in 
 #http://www.kangleelab.com/sdt-d-prime-calculation---other-tips.html
 PropResp[(MinFARows), "AdjProp"] <- 1/(2*PropResp[(MinFARows), "TotalTrials"])
+PropResp[(MaxHitRows), "AdjProp"] <- 1-(1/(2*PropResp[(MaxHitRows), "TotalTrials"]))
 
 #Count how many such values were replaced
 PropResp$MaxHitRows <- MaxHitRows
