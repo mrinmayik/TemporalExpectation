@@ -540,6 +540,36 @@ PropResp$MinFARows <- MinFARows
 
 #Now calculate qnorm on adjusted values
 PropResp$QNormResp <- qnorm(PropResp$AdjProp)
+#Finally, calculate dprime
+DprimeData <- ddply(PropResp, c("Participant", "Block"), summarise,
+                    New=QNormResp[Condition=="Old" & RespType=="Hit"] -
+                      QNormResp[Condition=="New" & RespType=="FA"],
+                    Similar_HI=QNormResp[Condition=="Old" & RespType=="Hit"] -
+                      QNormResp[Condition=="Similar_HI" & RespType=="FA"],
+                    Similar_LI=QNormResp[Condition=="Old" & RespType=="Hit"] -
+                      QNormResp[Condition=="Similar_LI" & RespType=="FA"])
+DprimeData_Long <- melt(DprimeData, id.vars=c("Participant", "Block"))
+DprimeData_Long <- DprimeData_Long %>% dplyr::rename(Condition=variable, DPrime=value)
+
+SummaryDprime <- ddply(DprimeData_Long, c("Condition", "Block"), SummaryData, "DPrime")
+
+SummaryDprime$Condition <- factor(SummaryDprime$Condition, levels=FactorLabels[[ExpName]]$Condition$levels, 
+                                  labels=FactorLabels[[ExpName]]$Condition$labels)
+SummaryDprime$Block <- factor(SummaryDprime$Block, levels=FactorLabels[[ExpName]]$Block$levels, 
+                                  labels=FactorLabels[[ExpName]]$Block$labels)
+
+DPrimeBar <- ggplot(data=SummaryDprime, aes(x=Condition, y=Mean, fill=Block)) +
+  stdbar + 
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  scale_fill_manual(values=c("#FFC2A3", "#123C69"),
+                    breaks=FactorLabels[[ExpName]]$Block$labels, 
+                    labels=FactorLabels[[ExpName]]$Block$labels) + 
+  labs(x="Condition", y="d'", fill="Block") +
+  xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+
+Dprime_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=c(Block, Condition), 
+                          detailed=TRUE, type=2)
+Dprime_ANOVA$ANOVA
 
 
 
