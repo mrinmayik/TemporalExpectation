@@ -511,6 +511,39 @@ if(Save==1){
   dev.off()
 }
 
+
+########## Compute stats on dprime
+#First, figure out which blocks for which the FA rate was 0 or the hit rate was 1, because running 
+#qnorm on these values gives -Inf and Inf, respectively.
+#Make a separate columns for adjusted values so that the ones with zero can be counted
+PropResp$AdjProp <- NA
+MaxHitRows <- (PropResp$RespType=="Hit" & PropResp$SumResp==1)
+MinFARows <- (PropResp$RespType=="FA" & PropResp$SumResp==0)
+PropResp[!(MaxHitRows | MinFARows), "AdjProp"]  <- PropResp[!(MaxHitRows | MinFARows), "PropResp"] 
+#This basically changes the value of 0 FAs to 1/2 a FA as suggested in 
+#http://www.kangleelab.com/sdt-d-prime-calculation---other-tips.html
+PropResp[(MinFARows), "AdjProp"] <- 1/(2*PropResp[(MinFARows), "TotalTrials"])
+
+#Count how many such values were replaced
+PropResp$MaxHitRows <- MaxHitRows
+PropResp$MinFARows <- MinFARows
+(NumAdjResp_CondBlock <- ddply(PropResp, c("Condition", "Block"), summarise,
+                               MaxHit=sum(MaxHitRows),
+                               MinFA=sum(MinFARows)))
+(NumAdjResp_Cond <- ddply(PropResp, c("Condition"), summarise,
+                               MaxHit=sum(MaxHitRows),
+                               MinFA=sum(MinFARows)))
+(NumAdjResp_Block <- ddply(PropResp, c("Block"), summarise,
+                               MaxHit=sum(MaxHitRows),
+                               MinFA=sum(MinFARows)))
+
+
+#Now calculate qnorm on adjusted values
+PropResp$QNormResp <- qnorm(PropResp$AdjProp)
+
+
+
+
 #Only look at new and old trials to replicate analysis from Ward & Jones (2019)
 #PropResp_NoSim <- PropResp[PropResp$Condition %in% c("Old", "New"), ]
 if(Exp==5){
