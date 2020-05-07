@@ -7,13 +7,15 @@ library(reshape)
 library(readr)
 library(stringr)
 library(ez)
+library(BayesFactor)
 
 ########################## Set Admin variables ##########################
 
 #Initialise basic stuff
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
+source("~/GitDir/GeneralScripts/InitialiseR/InitialiseStatsFunc.R")
 
-Exp <- 5
+Exp <- 3
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -57,6 +59,7 @@ if(Exp==3){
   ColdOrd_Test <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
                     "Items", "ObjectTime", "Resp", "RespTime")
   NumCond <- 3
+  MatchString <- sprintf("^%s", TotalEncodeTrials)
 }else if(Exp==4){
   toexclude <- c("CB11b_4", "CB11b_5")
   ObjDur <- 700
@@ -70,6 +73,7 @@ if(Exp==3){
   ColdOrd_Test <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
                     "Items", "ObjectTime", "Resp", "RespTime")
   NumCond <- 3
+  MatchString <- sprintf("^%s", TotalEncodeTrials)
 }else if(Exp==5){
   toexclude <- c()
   ObjDur <- 700
@@ -84,6 +88,7 @@ if(Exp==3){
   ColdOrd_Test <- c("Participant", "Block", "ListAssignment", "ListType", "Category", "Condition", "Trial", "Picture", 
                     "Items", "ObjectTime", "Resp", "RespTime")
   NumCond <- 2
+  MatchString <- sprintf("%s$", TotalEncodeTrials)
 }
 #
 ########################## Functions ##########################
@@ -157,7 +162,8 @@ for(Files in FileNames){
   
   #Print warning if there is a discrepancy in any trial that isn't the last trial of the block.
   #The last trial should have 192 as trial number in the event code
-  if(!(all(grep(TotalEncodeTrials, EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
+  #The $ in grep matches 96 only when it is at the end of the line
+  if(!(all(grep(MatchString, EncodeLog[abs(EncodeLog$Discrepancy)>18, "Picture"]) == c(1, 2)))){
     print(sprintf("CAREFUL!!!! Time discrepancy in CB%s", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
   }
   print(sprintf("CB%s done!!", str_extract(Files, "[0-9]?[0-9][a-z]_[0-9]")))
@@ -517,7 +523,7 @@ if(Save==1){
 }
 
 
-########## Compute stats on dprime
+########## Compute stats on dprime ##########
 #First, figure out which blocks for which the FA rate was 0 or the hit rate was 1, because running 
 #qnorm on these values gives -Inf and Inf, respectively.
 #Make a separate columns for adjusted values so that the ones with zero can be counted
@@ -552,6 +558,16 @@ if(Exp==5){
                       DPrime=QNormResp[Condition=="Old" & RespType=="Hit"] -
                         QNormResp[Condition=="New" & RespType=="FA"])
   
+  DPrimeAboveChance <- list("TPData"=c())
+  for(block in FactorLabels[[ExpName]]$Block$levels){
+    DPrimeAboveChance[[block]][["New"]] <- onesample_ttest(DprimeData[DprimeData$Block==block, "DPrime"], chance=0)
+    DPrimeAboveChance[["TPData"]] <- rbind(DPrimeAboveChance$TPData, 
+                                           data.frame(Condition="New", Block=block, 
+                                                      t=DPrimeAboveChance[[block]][["New"]]$ttest$statistic,
+                                                      p=DPrimeAboveChance[[block]][["New"]]$ttest$p.value))
+  }
+  
+  
   SummaryDprime <- ddply(DprimeData, c("Block"), SummaryData, "DPrime")
   SummaryDprime$Block <- factor(SummaryDprime$Block, levels=FactorLabels[[ExpName]]$Block$levels, 
                                 labels=FactorLabels[[ExpName]]$Block$labels)
@@ -565,6 +581,10 @@ if(Exp==5){
   Dprime_ANOVA <- ezANOVA(data=DprimeData, dv=DPrime, wid=Participant, within=c(Block), 
                           detailed=TRUE, type=2)
   Dprime_ANOVA$ANOVA
+  
+  Dprime_BF <- ttestBF(x = DprimeData[DprimeData$Block=="TR", "DPrime"], 
+                       y=DprimeData[DprimeData$Block=="TI", "DPrime"], 
+                       paired=TRUE)
 }else{
   DprimeData <- ddply(PropResp, c("Participant", "Block"), summarise,
                       New=QNormResp[Condition=="Old" & RespType=="Hit"] -
@@ -573,6 +593,22 @@ if(Exp==5){
                         QNormResp[Condition=="Similar_HI" & RespType=="FA"],
                       Similar_LI=QNormResp[Condition=="Old" & RespType=="Hit"] -
                         QNormResp[Condition=="Similar_LI" & RespType=="FA"])
+  
+  #Make sure d prime is higher than zero
+  DPrimeAboveChance <- list("TPData"=c())
+  for(cond in FactorLabels[[ExpName]]$Condition$levels[2:4]){
+    for(block in FactorLabels[[ExpName]]$Block$levels){
+      DPrimeAboveChance[[block]][[cond]] <- onesample_ttest(DprimeData[DprimeData$Block==block, cond], chance=0)
+      DPrimeAboveChance[["TPData"]] <- rbind(DPrimeAboveChance$TPData, 
+                                                       data.frame(Condition=cond, Block=block, 
+                                                                  t=DPrimeAboveChance[[block]][[cond]]$ttest$statistic,
+                                                                  p=DPrimeAboveChance[[block]][[cond]]$ttest$p.value))
+    }
+  }
+  
+  
+  
+  
   DprimeData_Long <- melt(DprimeData, id.vars=c("Participant", "Block"))
   DprimeData_Long <- DprimeData_Long %>% dplyr::rename(Condition=variable, DPrime=value)
   
