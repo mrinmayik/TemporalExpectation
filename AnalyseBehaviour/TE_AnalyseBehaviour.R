@@ -584,9 +584,11 @@ PropResp$MinFARows <- MinFARows
 (NumAdjResp_Cond <- ddply(PropResp, c("Condition"), summarise,
                                MaxHit=sum(MaxHitRows),
                                MinFA=sum(MinFARows)))
-(NumAdjResp_Block <- ddply(PropResp, c("Block"), summarise,
+(NumAdjResp_Block <- ddply(PropResp, c("Participant", "Block"), summarise,
                                MaxHit=sum(MaxHitRows),
                                MinFA=sum(MinFARows)))
+twosample_ttest(NumAdjResp_Block[NumAdjResp_Block$Block=="TR", "MinFA"], 
+                NumAdjResp_Block[NumAdjResp_Block$Block=="TI", "MinFA"], paired=TRUE)$ttest
 
 
 #Now calculate qnorm on adjusted values
@@ -666,6 +668,16 @@ if(Exp==5){
                       labels=FactorLabels[[ExpName]]$Block$labels) + 
     labs(x="Condition", y="d'", fill="Block") +
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+  DPrimeDot <- ggplot(data=DprimeData_Long, aes(x=Condition, y=DPrime, fill=Block)) + 
+    geom_dotplot(binaxis = "y", stackdir = "center", position="dodge", dotsize=0.5, position=position_dodge(0.8)) +
+    stat_summary(fun.y=mean, geom="point", shape=18,
+                 size=3, position=position_dodge(0.8)) +
+    
+    scale_fill_manual(values=c("#FFC2A3", "#123C69"),
+                      breaks=FactorLabels[[ExpName]]$Block$levels, 
+                      labels=FactorLabels[[ExpName]]$Block$levels)  +
+    xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+  
   
   Dprime_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=c(Block, Condition), 
                           detailed=TRUE, type=2)
