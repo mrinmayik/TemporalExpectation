@@ -8,6 +8,7 @@ library(readr)
 library(stringr)
 library(ez)
 library(BayesFactor)
+library(effsize)
 
 ########################## Set Admin variables ##########################
 
@@ -433,8 +434,46 @@ TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Condition, y=Mean, fill=Block)) +
 
 #Do stats on it
 RT_ANOVA <- ezANOVA(data=TestRT, dv=Mean, wid=Participant, within=c(Block, Condition), 
-                     detailed=TRUE, type=2)
+                     detailed=TRUE, type=3)
 RT_ANOVA$ANOVA
+#Another way:
+#summary(aov(formula=Mean~(Block*Condition)+Error(Participant/(Block*Condition)), data=TestRT))
+
+#Do post-hoc tests
+TestRT_byCond <- ddply(TestGoodData, c("Participant", "Condition"), SummaryData, "RT")
+RT_PostHoc <- c()
+for(cond in FactorLabels[[ExpName]]$Condition$levels){
+  #What should this condition be compared to?
+  compareto <- FactorLabels[[ExpName]]$Condition$levels[(FactorLabels[[ExpName]]$Condition$levels != cond)]
+  for(comp in compareto){
+    phtest <- twosample_ttest(grp1=TestRT_byCond[TestRT_byCond$Condition==cond, "Mean"],
+                              grp2=TestRT_byCond[TestRT_byCond$Condition==comp, "Mean"],
+                              paired=TRUE)
+    
+    RTdiff <- ddply(TestRT_byCond, c("Participant"), summarise, RTDiff=Mean[Condition==cond]-Mean[Condition==comp])
+    
+    CohensD <- cohen.d(TestRT_byCond[TestRT_byCond$Condition==cond, "Mean"],
+                       TestRT_byCond[TestRT_byCond$Condition==comp, "Mean"],
+                       paired=TRUE)
+    CohensD_formula <- cohen.d(formula=Mean~Condition, data=TestRT_byCond[TestRT_byCond$Condition %in% c(comp,cond), ])
+    CohensD_Diff <- cohen.d(RTdiff)
+    RT_PostHoc <- rbind(RT_PostHoc, data.frame(X=cond, Y=comp, 
+                                              W1=phtest$shapiro1$statistic,
+                                              W.p1=phtest$shapiro1$p.value,
+                                              W2=phtest$shapiro2$statistic,
+                                              W.p2=phtest$shapiro2$p.value,
+                                              t=phtest$ttest$statistic,
+                                              t.df=phtest$ttest$parameter,
+                                              t.p=phtest$ttest$p.value,
+                                              CohensD=CohensD$estimate,
+                                              CohensD=CohensD_formula$estimate,
+                                              sig=phtest$ttest$p.value<=0.05))
+    
+  }
+}
+RT_PostHoc$sig_BFCorrected <- RT_PostHoc$t.p<(0.05/6)
+SummaryTestRT_byCond <- ddply(TestRT_byCond, "Condition", SummaryData, "Mean")
+
 
 if(Save==1){
   jpeg(filename=sprintf("%s/Presentations/Psychonomics2019/Poster/TestRTBar_Exp3.jpeg", BasePath), 
