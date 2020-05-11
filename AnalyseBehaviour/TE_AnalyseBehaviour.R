@@ -668,6 +668,7 @@ if(Exp==5){
                       labels=FactorLabels[[ExpName]]$Block$labels) + 
     labs(x="Condition", y="d'", fill="Block") +
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+  
   DPrimeDot <- ggplot(data=DprimeData_Long, aes(x=Condition, y=DPrime, fill=Block)) + 
     geom_dotplot(binaxis = "y", stackdir = "center", position="dodge", dotsize=0.5, position=position_dodge(0.8)) +
     stat_summary(fun.y=mean, geom="point", shape=18,
@@ -678,15 +679,106 @@ if(Exp==5){
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
   
   
+  #ANOVA on dPrime
+  DprimeData_Long$Block <- factor(DprimeData_Long$Block)
+  DprimeData_Long$Condition <- factor(DprimeData_Long$Condition)
+  
   Dprime_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=c(Block, Condition), 
                           detailed=TRUE, type=2)
   Dprime_ANOVA$ANOVA
   
-  
+  DPrime_BF <- anovaBF(formula=DPrime~Block*Condition, data=DprimeData_Long)
+  DPrime_BF/max(DPrime_BF)
 }
 
 
+##### Unfortunately, collapsing dPrime across blocks isn't as trivial as averaging numbers differently like
+#we did for RT. The proportions of hits, FAs etc need to be recalculated, this time, without taking into account 
+#the block
+PropResp_byCond <- PropResp[, c("Participant", "Condition", "Block", "RespType", "SumResp")]
+PropResp_byCond <- ddply(PropResp_byCond, c("Participant", "Condition", "RespType"), summarise, SumResp=sum(SumResp))
 
+TotalTrials_byCond <- ddply (TestGoodData, c("Participant", "Condition"), summarise, TotalTrials=length(ListType))
+
+PropResp_byCond <- merge(PropResp_byCond, TotalTrials_byCond, by=c("Participant", "Condition"), all.x=TRUE, all.y=TRUE)
+CheckMerge(PropResp_byCond)
+#Calculate proportion by block
+PropResp_byCond$PropResp <- PropResp_byCond$SumResp/PropResp_byCond$TotalTrials
+
+PropResp_byCond$AdjProp <- NA
+#Adjust for 0 FAs
+MaxHitRows <- (PropResp_byCond$RespType=="Hit" & PropResp_byCond$PropResp==1)
+MinFARows <- (PropResp_byCond$RespType=="FA" & PropResp_byCond$PropResp==0)
+PropResp_byCond[!(MaxHitRows | MinFARows), "AdjProp"]  <- PropResp_byCond[!(MaxHitRows | MinFARows), "PropResp"] 
+PropResp_byCond[(MinFARows), "AdjProp"] <- 1/(2*PropResp_byCond[(MinFARows), "TotalTrials"])
+PropResp_byCond[(MaxHitRows), "AdjProp"] <- 1-(1/(2*PropResp_byCond[(MaxHitRows), "TotalTrials"]))
+
+#Count how many such values were replaced
+PropResp_byCond$MaxHitRows <- MaxHitRows
+PropResp_byCond$MinFARows <- MinFARows
+(NumAdjResp_Cond <- ddply(PropResp_byCond, c("Condition"), summarise,
+                          MaxHit=sum(MaxHitRows),
+                          MinFA=sum(MinFARows)))
+PropResp_byCond$QNormResp <- qnorm(PropResp_byCond$AdjProp)
+
+
+if(Exp==5){
+}else{
+  DprimeData_byCond <- ddply(PropResp_byCond, c("Participant"), summarise,
+                             New=QNormResp[Condition=="Old" & RespType=="Hit"] -
+                               QNormResp[Condition=="New" & RespType=="FA"],
+                             Similar_HI=QNormResp[Condition=="Old" & RespType=="Hit"] -
+                               QNormResp[Condition=="Similar_HI" & RespType=="FA"],
+                             Similar_LI=QNormResp[Condition=="Old" & RespType=="Hit"] -
+                               QNormResp[Condition=="Similar_LI" & RespType=="FA"])
+  
+  DprimeData_byCond_Long <- melt(DprimeData_byCond, id.vars=c("Participant"))
+  DprimeData_byCond_Long <- DprimeData_byCond_Long %>% dplyr::rename(Condition=variable, DPrime=value)
+  
+  #Posthoc tests for DPrime main effect
+  DPrime_PostHoc <- c()
+  for(cond in FactorLabels[[ExpName]]$Condition$levels[2:4]){
+    #What should this condition be compared to?
+    compareto <- FactorLabels[[ExpName]]$Condition$levels[2:4][(FactorLabels[[ExpName]]$Condition$levels[2:4] != cond)]
+    for(comp in compareto){
+      phtest <- twosample_ttest(grp1=DprimeData_byCond_Long[DprimeData_byCond_Long$Condition==cond, "DPrime"],
+                                grp2=DprimeData_byCond_Long[DprimeData_byCond_Long$Condition==comp, "DPrime"],
+                                paired=TRUE)
+      
+      #RTdiff <- ddply(TestRT_byCond, c("Participant"), summarise, RTDiff=Mean[Condition==cond]-Mean[Condition==comp])
+      
+      #CohensD <- cohen.d(TestRT_byCond[TestRT_byCond$Condition==cond, "Mean"],
+      #                   TestRT_byCond[TestRT_byCond$Condition==comp, "Mean"],
+      #                   paired=TRUE)
+      #CohensD_formula <- cohen.d(formula=Mean~Condition, data=TestRT_byCond[TestRT_byCond$Condition %in% c(comp,cond), ])
+      #CohensD_Diff <- cohen.d(RTdiff)
+      DPrime_PostHoc <- rbind(DPrime_PostHoc, data.frame(X=cond, Y=comp, 
+                                                         W1=phtest$shapiro1$statistic,
+                                                         W.p1=phtest$shapiro1$p.value,
+                                                         W2=phtest$shapiro2$statistic,
+                                                         W.p2=phtest$shapiro2$p.value,
+                                                         t=phtest$ttest$statistic,
+                                                         t.df=phtest$ttest$parameter,
+                                                         t.p=phtest$ttest$p.value,
+                                                         sig=phtest$ttest$p.value<=0.05))
+      #CohensD=CohensD$estimate,
+      #CohensD=CohensD_formula$estimate,
+      #sig=phtest$ttest$p.value<=0.05))
+      
+    }
+  }
+  DPrime_PostHoc$p_BFCorrected <- DPrime_PostHoc$t.p*3
+  DPrime_PostHoc$sig_BFCorrected <- DPrime_PostHoc$t.p<(0.05/3)
+  
+  SummaryDprime_byCond <- ddply(DprimeData_byCond_Long, "Condition", SummaryData, "DPrime")
+  
+  
+}
+  
+
+
+
+########################### Extra analyses ###########################
 #Only look at new and old trials to replicate analysis from Ward & Jones (2019)
 #PropResp_NoSim <- PropResp[PropResp$Condition %in% c("Old", "New"), ]
 if(Exp==5){
@@ -751,7 +843,7 @@ CorrReg_ANOVA$ANOVA
 
 
 
-##### Look at accuracy by quarts #####
+##### Look at accuracy by quarts 
 #Merge with encoding so that information about when the item was presented during encoding is included
 ThirdsData <- merge(TestData, EncodeData[, c("Participant", "Block", "Condition", "Items", "Thirds")], 
                       by=c("Participant", "Block", "Condition", "Items"), all.x=TRUE, all.y=TRUE)
