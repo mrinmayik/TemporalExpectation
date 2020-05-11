@@ -672,7 +672,6 @@ if(Exp==5){
     geom_dotplot(binaxis = "y", stackdir = "center", position="dodge", dotsize=0.5, position=position_dodge(0.8)) +
     stat_summary(fun.y=mean, geom="point", shape=18,
                  size=3, position=position_dodge(0.8)) +
-    
     scale_fill_manual(values=c("#FFC2A3", "#123C69"),
                       breaks=FactorLabels[[ExpName]]$Block$levels, 
                       labels=FactorLabels[[ExpName]]$Block$levels)  +
@@ -682,6 +681,8 @@ if(Exp==5){
   Dprime_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=c(Block, Condition), 
                           detailed=TRUE, type=2)
   Dprime_ANOVA$ANOVA
+  
+  
 }
 
 
