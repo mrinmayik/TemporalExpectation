@@ -456,22 +456,24 @@ for(cond in FactorLabels[[ExpName]]$Condition$levels){
                        TestRT_byCond[TestRT_byCond$Condition==comp, "Mean"],
                        paired=TRUE)
     CohensD_formula <- cohen.d(formula=Mean~Condition, data=TestRT_byCond[TestRT_byCond$Condition %in% c(comp,cond), ])
-    CohensD_Diff <- cohen.d(RTdiff)
+    #CohensD_Diff <- cohen.d(RTdiff)
     RT_PostHoc <- rbind(RT_PostHoc, data.frame(X=cond, Y=comp, 
-                                              W1=phtest$shapiro1$statistic,
-                                              W.p1=phtest$shapiro1$p.value,
-                                              W2=phtest$shapiro2$statistic,
-                                              W.p2=phtest$shapiro2$p.value,
-                                              t=phtest$ttest$statistic,
-                                              t.df=phtest$ttest$parameter,
-                                              t.p=phtest$ttest$p.value,
-                                              CohensD=CohensD$estimate,
-                                              CohensD=CohensD_formula$estimate,
-                                              sig=phtest$ttest$p.value<=0.05))
+                                               W1=phtest$shapiro1$statistic,
+                                               W.p1=phtest$shapiro1$p.value,
+                                               W2=phtest$shapiro2$statistic,
+                                               W.p2=phtest$shapiro2$p.value,
+                                               t=phtest$ttest$statistic,
+                                               t.df=phtest$ttest$parameter,
+                                               t.p=phtest$ttest$p.value,
+                                               CohensD=CohensD$estimate,
+                                               CohensD=CohensD_formula$estimate,
+                                               sig=phtest$ttest$p.value<=0.05))
     
   }
 }
-RT_PostHoc$sig_BFCorrected <- RT_PostHoc$t.p<(0.05/6)
+if(Exp!=5){
+  RT_PostHoc$sig_BFCorrected <- RT_PostHoc$t.p<(0.05/6)
+}
 SummaryTestRT_byCond <- ddply(TestRT_byCond, "Condition", SummaryData, "Mean")
 
 
@@ -619,11 +621,19 @@ if(Exp==5){
     labs(x="Block", y="d'") +
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
   
-  Dprime_ANOVA <- ezANOVA(data=DprimeData, dv=DPrime, wid=Participant, within=c(Block), 
-                          detailed=TRUE, type=2)
-  Dprime_ANOVA$ANOVA
+  DPrimeDot <- ggplot(data=DprimeData, aes(x=Block, y=DPrime, fill=Block)) + 
+    geom_dotplot(binaxis = "y", stackdir = "center", position=position_dodge(0.8), dotsize=0.5) +
+    scale_fill_manual(values=c("#FFC2A3", "#123C69"),
+                      breaks=FactorLabels[[ExpName]]$Block$levels, 
+                      labels=FactorLabels[[ExpName]]$Block$levels)  +
+    xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
   
-  Dprime_BF <- ttestBF(x = DprimeData[DprimeData$Block=="TR", "DPrime"], 
+  Dprime_ANOVA <- twosample_ttest(grp1=DprimeData[DprimeData$Block=="TR", "DPrime"],
+                                  grp2=DprimeData[DprimeData$Block=="TI", "DPrime"],
+                                  paired=TRUE)
+  Dprime_ANOVA
+  
+  Dprime_BF <- ttestBF(x=DprimeData[DprimeData$Block=="TR", "DPrime"], 
                        y=DprimeData[DprimeData$Block=="TI", "DPrime"], 
                        paired=TRUE)
 }else{
@@ -670,9 +680,7 @@ if(Exp==5){
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
   
   DPrimeDot <- ggplot(data=DprimeData_Long, aes(x=Condition, y=DPrime, fill=Block)) + 
-    geom_dotplot(binaxis = "y", stackdir = "center", position="dodge", dotsize=0.5, position=position_dodge(0.8)) +
-    stat_summary(fun.y=mean, geom="point", shape=18,
-                 size=3, position=position_dodge(0.8)) +
+    geom_dotplot(binaxis = "y", stackdir = "center", position=position_dodge(0.8), dotsize=0.5) +
     scale_fill_manual(values=c("#FFC2A3", "#123C69"),
                       breaks=FactorLabels[[ExpName]]$Block$levels, 
                       labels=FactorLabels[[ExpName]]$Block$levels)  +
