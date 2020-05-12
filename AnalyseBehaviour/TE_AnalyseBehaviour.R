@@ -679,11 +679,14 @@ if(Exp==5){
     labs(x="Condition", y="d'", fill="Block") +
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
   
-  DPrimeDot <- ggplot(data=DprimeData_Long, aes(x=Condition, y=DPrime, fill=Block)) + 
-    geom_dotplot(binaxis = "y", stackdir = "center", position=position_dodge(0.8), dotsize=0.5) +
+  DPrimeDot <- ggplot(data=DprimeData_Long, aes(x=Condition, y=DPrime, fill=Block)) +
+    stat_summary(fun.y=mean, geom="bar", position="dodge", color="#000000", size=1.5) +
+    stat_summary(fun.data=mean_cl_normal, geom="errorbar",
+                 width=0.3, size=0.9, position=position_dodge(.9)) + 
     scale_fill_manual(values=c("#FFC2A3", "#123C69"),
                       breaks=FactorLabels[[ExpName]]$Block$levels, 
                       labels=FactorLabels[[ExpName]]$Block$levels)  +
+    geom_dotplot(binaxis = "y", stackdir = "center", position="dodge", dotsize=0.7) +
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
   
   
