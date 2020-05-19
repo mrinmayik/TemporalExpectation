@@ -450,13 +450,15 @@ for(cond in FactorLabels[[ExpName]]$Condition$levels){
                               grp2=TestRT_byCond[TestRT_byCond$Condition==comp, "Mean"],
                               paired=TRUE)
     
+    #For manual cohen's d calculation
     RTdiff <- ddply(TestRT_byCond, c("Participant"), summarise, RTDiff=Mean[Condition==cond]-Mean[Condition==comp])
+    #For appropriate manual calculation for paired sample sizes, we need the correlation between the two groups:
+    #http://www.real-statistics.com/students-t-distribution/paired-sample-t-test/cohens-d-paired-samples/
+    r <- cor(TestRT_byCond[TestRT_byCond$Condition==cond, "Mean"], TestRT_byCond[TestRT_byCond$Condition==comp, "Mean"])
     
-    CohensD <- cohen.d(TestRT_byCond[TestRT_byCond$Condition==cond, "Mean"],
-                       TestRT_byCond[TestRT_byCond$Condition==comp, "Mean"],
-                       paired=TRUE)
-    CohensD_formula <- cohen.d(formula=Mean~Condition, data=TestRT_byCond[TestRT_byCond$Condition %in% c(comp,cond), ])
-    #CohensD_Diff <- cohen.d(RTdiff)
+    CohensD <- cohen.d(formula=Mean~Condition | Subject(Participant), 
+                       data=TestRT_byCond[TestRT_byCond$Condition %in% c(comp,cond), ], paired=TRUE, pooled=TRUE,
+                       within=TRUE)
     RT_PostHoc <- rbind(RT_PostHoc, data.frame(X=cond, Y=comp, 
                                                W1=phtest$shapiro1$statistic,
                                                W.p1=phtest$shapiro1$p.value,
@@ -465,8 +467,10 @@ for(cond in FactorLabels[[ExpName]]$Condition$levels){
                                                t=phtest$ttest$statistic,
                                                t.df=phtest$ttest$parameter,
                                                t.p=phtest$ttest$p.value,
-                                               CohensD=CohensD$estimate,
-                                               CohensD=CohensD_formula$estimate,
+                                               d_effsize=CohensD$estimate,
+                                               d_srm=mean(RTdiff$RTDiff)/(sd(RTdiff$RTDiff)/sqrt(2*(1-r))),
+                                               d_diff=mean(RTdiff$RTDiff)/sd(RTdiff$RTDiff),
+                                               d_t=phtest$ttest$statistic/sqrt(24),
                                                sig=phtest$ttest$p.value<=0.05))
     
   }
@@ -650,10 +654,12 @@ if(Exp==5){
   for(cond in FactorLabels[[ExpName]]$Condition$levels[2:4]){
     for(block in FactorLabels[[ExpName]]$Block$levels){
       DPrimeAboveChance[[block]][[cond]] <- onesample_ttest(DprimeData[DprimeData$Block==block, cond], chance=0)
+      CohensD <- cohen.d(d=DprimeData[DprimeData$Block==block, cond], f=NA, mu=0)
       DPrimeAboveChance[["TPData"]] <- rbind(DPrimeAboveChance$TPData, 
                                                        data.frame(Condition=cond, Block=block, 
                                                                   t=DPrimeAboveChance[[block]][[cond]]$ttest$statistic,
-                                                                  p=DPrimeAboveChance[[block]][[cond]]$ttest$p.value))
+                                                                  p=DPrimeAboveChance[[block]][[cond]]$ttest$p.value,
+                                                                  d=CohensD$estimate))
     }
   }
   
@@ -756,13 +762,18 @@ if(Exp==5){
                                 grp2=DprimeData_byCond_Long[DprimeData_byCond_Long$Condition==comp, "DPrime"],
                                 paired=TRUE)
       
-      #RTdiff <- ddply(TestRT_byCond, c("Participant"), summarise, RTDiff=Mean[Condition==cond]-Mean[Condition==comp])
+      #For manual calculation
+      Dprimediff <- ddply(DprimeData_byCond_Long, c("Participant"), summarise, 
+                          Dprimediff=DPrime[Condition==cond]-DPrime[Condition==comp])
+      r <- cor(DprimeData_byCond_Long[DprimeData_byCond_Long$Condition==cond, "DPrime"], 
+               DprimeData_byCond_Long[DprimeData_byCond_Long$Condition==comp, "DPrime"])
       
-      #CohensD <- cohen.d(TestRT_byCond[TestRT_byCond$Condition==cond, "Mean"],
-      #                   TestRT_byCond[TestRT_byCond$Condition==comp, "Mean"],
-      #                   paired=TRUE)
-      #CohensD_formula <- cohen.d(formula=Mean~Condition, data=TestRT_byCond[TestRT_byCond$Condition %in% c(comp,cond), ])
-      #CohensD_Diff <- cohen.d(RTdiff)
+      
+      
+      CohensD <- cohen.d(formula=DPrime~Condition | Subject(Participant), 
+                         data=DprimeData_byCond_Long[DprimeData_byCond_Long$Condition %in% c(comp,cond), ],
+                                 paired=TRUE, pooled=TRUE, within=TRUE)
+      
       DPrime_PostHoc <- rbind(DPrime_PostHoc, data.frame(X=cond, Y=comp, 
                                                          W1=phtest$shapiro1$statistic,
                                                          W.p1=phtest$shapiro1$p.value,
@@ -771,6 +782,10 @@ if(Exp==5){
                                                          t=phtest$ttest$statistic,
                                                          t.df=phtest$ttest$parameter,
                                                          t.p=phtest$ttest$p.value,
+                                                         d_effsize=CohensD$estimate,
+                                                         d_srm=mean(Dprimediff$Dprimediff)/(sd(RTdiff$Dprimediff)/sqrt(2*(1-r))),
+                                                         d_diff=mean(Dprimediff$Dprimediff)/sd(RTdiff$Dprimediff),
+                                                         d_t=phtest$ttest$statistic/sqrt(24),
                                                          sig=phtest$ttest$p.value<=0.05))
       #CohensD=CohensD$estimate,
       #CohensD=CohensD_formula$estimate,
