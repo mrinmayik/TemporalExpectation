@@ -803,6 +803,22 @@ if(Exp==5){
   
 
 
+########################### Get participant info ###########################
+
+PartInfo <- read.xlsx(paste(BasePath, "Experiment/DemographicsInformation.xlsx", sep=""), sheet=ExpName)
+
+#Only keep the participants that have good data
+Demographics <- PartInfo[PartInfo$Participant %in% unique(TestGoodData$Participant), ]
+length(Demographics$Participant)
+
+CheckTrialNumbers(all(sort(unique(TestGoodData$Participant)) == sort(Demographics$Participant)))
+
+SummaryData(Demographics, "Age")
+min(Demographics$Age)
+max(Demographics$Age)
+sum(Demographics$Sex=="F")
+
+#
 
 ########################### Extra analyses ###########################
 #Only look at new and old trials to replicate analysis from Ward & Jones (2019)
