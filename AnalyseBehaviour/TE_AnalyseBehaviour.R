@@ -16,7 +16,7 @@ library(effsize)
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseStatsFunc.R")
 
-Exp <- 3
+Exp <- 4
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -30,13 +30,13 @@ ExcludeTrials <- FALSE
 FactorLabels <- list("Exp3" = list("Block" = list("levels"=c("TR", "TI"), 
                                                   "labels"=c("Regular", "Irregular")),
                                    "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
-                                                      "labels"=c("Old", "Similar: HI", "Similar: LI", "New")),
+                                                      "labels"=c("Old", "Similar: HS", "Similar: LS", "New")),
                                    "Resp" = list("levels"=c("Old", "Similar", "New"),
                                                  "labels"=c(1, 2, 3))),
                      "Exp4" = list("Block" = list("levels"=c("TR", "TI"), 
                                                   "labels"=c("Regular", "Irregular")),
                                    "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
-                                                      "labels"=c("Old", "Similar: HI", "Similar: LI", "New")),
+                                                      "labels"=c("Old", "Similar: HS", "Similar: LS", "New")),
                                    "Resp" = list("levels"=c("Old", "Similar", "New"),
                                                  "labels"=c(1, 2, 3))),
                      "Exp5" = list("Block" = list("levels"=c("TR", "TI"), 
@@ -227,6 +227,10 @@ View(EncodeData[EncodeData$TimeProblem==TRUE,])
 View(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==TotalEncodeTrials)), ])
 #Get rid of participants that are problematic in terms of timing
 toexclude <- c(toexclude, unique(EncodeData[which(EncodeData$TimeProblem==TRUE & !(EncodeData$Trial==TotalEncodeTrials)), "Participant"]))
+if(Exp==4){
+  #This person id being taken out accidentally, so put them back
+  toexclude <- toexclude[toexclude != "CB9b_4"]
+}
 
 EncodeData <- EncodeData[!(EncodeData$Participant %in% toexclude), ]
 unique(EncodeData$Participant)
@@ -409,7 +413,7 @@ if(Save==1){
   dev.off()
 }
 
-##### Look at RT now
+##### Look at RT now #####
 
 unique(TestGoodData$Participant)
 length(unique(TestGoodData$Participant))
@@ -534,7 +538,7 @@ SummaryPropResp$CondType <- paste(SummaryPropResp$Condition, SummaryPropResp$Res
 
 SummaryPropResp_Plot <- SummaryPropResp[SummaryPropResp$RespType %in% c("FA", "Hit"), ]
 SummaryPropResp_Plot$CondType <- factor(SummaryPropResp_Plot$CondType, levels=c("OldHit", "Similar_HIFA", "Similar_LIFA", "NewFA"),
-                                        labels=c("Hits", "False Alarm: \nSimilar HI", "False Alarm: \nSimilar LI", "False Alarm: \n New"))
+                                        labels=c("Hits", "False Alarm: \nSimilar HS", "False Alarm: \nSimilar LS", "False Alarm: \n New"))
 SummaryPropResp_Plot$Block <- factor(SummaryPropResp_Plot$Block, levels=FactorLabels[[ExpName]]$Block$levels, labels=FactorLabels[[ExpName]]$Block$labels)
 
 
@@ -619,8 +623,12 @@ if(Exp==5){
   SummaryDprime$Block <- factor(SummaryDprime$Block, levels=FactorLabels[[ExpName]]$Block$levels, 
                                 labels=FactorLabels[[ExpName]]$Block$labels)
   
-  DPrimeBar <- ggplot(data=SummaryDprime, aes(x=Block, y=Mean)) +
-    stdbar + 
+  DPrimeBar <- ggplot(data=SummaryDprime, aes(x=Block, y=Mean, fill=Block)) +
+    stdbar +
+    scale_fill_manual(values=c("#ff9a76", "#679b9b"),
+                      breaks=FactorLabels[[ExpName]]$Block$labels, 
+                      labels=FactorLabels[[ExpName]]$Block$labels) + 
+    coord_cartesian(ylim=c(0, 3.2)) +
     geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
     labs(x="Block", y="d'") +
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
@@ -631,6 +639,16 @@ if(Exp==5){
                       breaks=FactorLabels[[ExpName]]$Block$levels, 
                       labels=FactorLabels[[ExpName]]$Block$levels)  +
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+  
+  #Save out dprime plot
+  if(Save==1){
+    jpeg(filename=sprintf("%s/WritingsAndPresentations/ExpectationMeeting2020/PosterGraphics/PropRespBar_%s.jpeg", 
+                          BasePath, ExpName), 
+         width=2500, height=2000, res=300)
+    plot((DPrimeBar + posterlegendtheme + posterxaxistheme + posteryaxistheme))
+    dev.off()
+  }
+  
   
   Dprime_ANOVA <- twosample_ttest(grp1=DprimeData[DprimeData$Block=="TR", "DPrime"],
                                   grp2=DprimeData[DprimeData$Block=="TI", "DPrime"],
@@ -678,8 +696,9 @@ if(Exp==5){
   
   DPrimeBar <- ggplot(data=SummaryDprime, aes(x=Condition, y=Mean, fill=Block)) +
     stdbar + 
+    coord_cartesian(ylim=c(0, 3.2)) +
     geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-    scale_fill_manual(values=c("#FFC2A3", "#123C69"),
+    scale_fill_manual(values=c("#ff9a76", "#679b9b"),
                       breaks=FactorLabels[[ExpName]]$Block$labels, 
                       labels=FactorLabels[[ExpName]]$Block$labels) + 
     labs(x="Condition", y="d'", fill="Block") +
@@ -689,11 +708,21 @@ if(Exp==5){
     stat_summary(fun.y=mean, geom="bar", position="dodge", color="#000000", size=1.5) +
     stat_summary(fun.data=mean_cl_normal, geom="errorbar",
                  width=0.3, size=0.9, position=position_dodge(.9)) + 
-    scale_fill_manual(values=c("#FFC2A3", "#123C69"),
+    scale_fill_manual(values=c("#ff9a76", "#679b9b"),
                       breaks=FactorLabels[[ExpName]]$Block$levels, 
                       labels=FactorLabels[[ExpName]]$Block$levels)  +
     geom_dotplot(binaxis = "y", stackdir = "center", position="dodge", dotsize=0.7) +
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+  
+  #Save out dprime plot
+  if(Save==1){
+    jpeg(filename=sprintf("%s/WritingsAndPresentations/ExpectationMeeting2020/PosterGraphics/PropRespBar_%s.jpeg", 
+                          BasePath, ExpName), 
+         width=3000, height=2000, res=300)
+    plot((DPrimeBar + posterlegendtheme + posterxaxistheme + posteryaxistheme))
+    dev.off()
+  }
+  
   
   
   #ANOVA on dPrime
@@ -707,6 +736,7 @@ if(Exp==5){
   DPrime_BF <- anovaBF(formula=DPrime~Block*Condition, data=DprimeData_Long)
   DPrime_BF/max(DPrime_BF)
 }
+
 
 
 ##### Unfortunately, collapsing dPrime across blocks isn't as trivial as averaging numbers differently like
@@ -770,9 +800,9 @@ if(Exp==5){
       
       
       
-      CohensD <- cohen.d(formula=DPrime~Condition | Subject(Participant), 
-                         data=DprimeData_byCond_Long[DprimeData_byCond_Long$Condition %in% c(comp,cond), ],
-                                 paired=TRUE, pooled=TRUE, within=TRUE)
+      #CohensD <- cohen.d(formula=DPrime~Condition | Subject(Participant), 
+      #                   data=DprimeData_byCond_Long[DprimeData_byCond_Long$Condition %in% c(comp,cond), ],
+      #                           paired=TRUE, pooled=TRUE, within=TRUE)
       
       DPrime_PostHoc <- rbind(DPrime_PostHoc, data.frame(X=cond, Y=comp, 
                                                          W1=phtest$shapiro1$statistic,
@@ -817,7 +847,7 @@ SummaryData(Demographics, "Age")
 min(Demographics$Age)
 max(Demographics$Age)
 sum(Demographics$Sex=="F")
-
+ddply(Demographics, c("Awareness"), summarise, ln=length(Awareness))
 #
 
 ########################### Extra analyses ###########################
