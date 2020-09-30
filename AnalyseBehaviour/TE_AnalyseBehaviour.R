@@ -831,6 +831,47 @@ if(Exp==5){
   
 }
   
+########## Calculate the BPS score ##########
+
+if(Exp %in% c(3, 4)){
+  PropSimData <- PropResp[PropResp$Condition %in% c("Similar_HI", "Similar_LI"), ]
+  #CR=Similar that was correctly rejected
+  #Incorr=Similar that was called new
+  BPSScore <- ddply(PropSimData, c("Participant", "Condition", "Block"), summarise, 
+                    BPSScore=PropResp[RespType=="CR"]-PropResp[RespType=="Incorr"])
+  
+  SummaryBPSScore <- ddply(BPSScore, c("Condition", "Block"), SummaryData, "BPSScore")
+  SummaryBPSScore$Condition <- factor(SummaryBPSScore$Condition, 
+                                      levels=FactorLabels[[ExpName]]$Condition$levels,
+                                      labels=FactorLabels[[ExpName]]$Condition$labels)
+  SummaryBPSScore$Block <- factor(SummaryBPSScore$Block, 
+                                  levels=FactorLabels[[ExpName]]$Block$levels,
+                                  labels=FactorLabels[[ExpName]]$Block$labels)
+  
+  BPSBar <- ggplot(data=SummaryBPSScore, aes(x=Condition, y=Mean, fill=Block)) +
+    stdbar +
+    scale_fill_manual(values=c("#ff9a76", "#679b9b"),
+                      breaks=FactorLabels[[ExpName]]$Block$labels, 
+                      labels=FactorLabels[[ExpName]]$Block$labels) + 
+    coord_cartesian(ylim=c(0, 0.48)) +
+    geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+    labs(x="Condition", y="BPS Score") +
+    xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+  
+  
+  #ANOVA on BPS
+  #BPSScore_Long <- melt(BPSScore, id.vars=c("Participant", "Block"))
+  BPSScore$Block <- factor(BPSScore$Block)
+  BPSScore$Condition <- factor(BPSScore$Condition)
+  
+  BPSScore_ANOVA <- ezANOVA(data=BPSScore, dv=BPSScore, wid=Participant, within=c(Block, Condition), 
+                          detailed=TRUE, type=2)
+  BPSScore_ANOVA$ANOVA
+  
+  BPSScore_BF <- anovaBF(formula=BPSScore~Block*Condition, data=BPSScore)
+  BPSScore_BF/max(BPSScore_BF)
+  
+}
 
 
 ########################### Get participant info ###########################
