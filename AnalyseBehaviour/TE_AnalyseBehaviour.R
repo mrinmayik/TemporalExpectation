@@ -831,7 +831,41 @@ if(Exp==5){
   
 }
   
-########## Calculate the BPS score ##########
+########## Calculate scores from Stark et al. (2013s) ##########
+
+#### Traditional Recognition Score
+
+PropNewData <- PropResp[PropResp$Condition %in% c("New", "Old"), ]
+#CR=Similar that was correctly rejected
+#Incorr=Similar that was called new
+TradRecogScore <- ddply(PropNewData, c("Participant", "Block"), summarise, 
+                        TradRecogScore=PropResp[RespType=="Hit"]-PropResp[RespType=="FA"])
+
+SummaryTradRecog <- ddply(TradRecogScore, c("Block"), SummaryData, "TradRecogScore")
+SummaryTradRecog$Block <- factor(SummaryTradRecog$Block, 
+                                 levels=FactorLabels[[ExpName]]$Block$levels,
+                                 labels=FactorLabels[[ExpName]]$Block$labels)
+
+TradRecogBar <- ggplot(data=SummaryTradRecog, aes(x=Block, y=Mean, fill=Block)) +
+  stdbar +
+  scale_fill_manual(values=c("#ff9a76", "#679b9b"),
+                    breaks=FactorLabels[[ExpName]]$Block$labels, 
+                    labels=FactorLabels[[ExpName]]$Block$labels) + 
+  coord_cartesian(ylim=c(0, 0.85)) +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  labs(x="Condition", y="Hits minus False Alarms") +
+  xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+
+TradRecog_ttest <- twosample_ttest(grp1=TradRecogScore[TradRecogScore$Block=="TR", "TradRecogScore"],
+                                grp2=TradRecogScore[TradRecogScore$Block=="TI", "TradRecogScore"],
+                                paired=TRUE)
+TradRecog_ttest
+
+TradRecog_BF <- ttestBF(x=TradRecogScore[TradRecogScore$Block=="TR", "TradRecogScore"], 
+                        y=TradRecogScore[TradRecogScore$Block=="TI", "TradRecogScore"], 
+                        paired=TRUE)
+
+#### BPS Score
 
 if(Exp %in% c(3, 4)){
   PropSimData <- PropResp[PropResp$Condition %in% c("Similar_HI", "Similar_LI"), ]
