@@ -905,6 +905,17 @@ if(Exp %in% c(3, 4)){
   BPSScore_BF <- anovaBF(formula=BPSScore~Block*Condition, data=BPSScore)
   BPSScore_BF/max(BPSScore_BF)
   
+  for(cond in c("Similar_HI", "Similar_LI")){
+    BPSScore_Cond <- BPSScore[BPSScore$Condition==cond,]
+    
+    print(sprintf("T-test on %s", cond))
+    BPSScore_ttest <- twosample_ttest(grp1=BPSScore_Cond[BPSScore_Cond$Block=="TR", "BPSScore"],
+                                       grp2=BPSScore_Cond[BPSScore_Cond$Block=="TI", "BPSScore"],
+                                       paired=TRUE)
+    
+    print(BPSScore_ttest$ttest)
+  }
+  
 }
 
 
