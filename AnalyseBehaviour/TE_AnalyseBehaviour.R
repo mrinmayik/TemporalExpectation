@@ -923,12 +923,22 @@ if(Exp %in% c(3, 4)){
 
 ########################### Get response Pattern ###########################
 
-TestGoodData$RespName <- factor(TestGoodData$Resp, levels=1:3, labels=c("Old", "Similar", "New"))
+TestGoodData$RespName <- factor(TestGoodData$Resp, 
+                                levels=FactorLabels[[ExpName]]$Resp$labels, 
+                                labels=FactorLabels[[ExpName]]$Resp$levels)
 #Count responses
-RespPatterns <- ddply(TestGoodData, c("Participant", "Condition", "Block"), summarise,
-                     OldResp=sum(RespName=="Old"),
-                     SimResp=sum(RespName=="Similar"),
-                     NewResp=sum(RespName=="New"))
+if(Exp==5){
+  RespPatterns <- ddply(TestGoodData, c("Participant", "Condition", "Block"), summarise,
+                        OldResp=sum(RespName=="Old"),
+                        NewResp=sum(RespName=="New"))
+  
+}else{
+  RespPatterns <- ddply(TestGoodData, c("Participant", "Condition", "Block"), summarise,
+                        OldResp=sum(RespName=="Old"),
+                        SimResp=sum(RespName=="Similar"),
+                        NewResp=sum(RespName=="New"))
+}
+
 #Make long
 RespPatterns_Long <- melt(RespPatterns, id.vars=c("Participant", "Condition", "Block"))
 RespPatterns_Long <- RespPatterns_Long %>% dplyr::rename(Response=variable,
@@ -944,28 +954,49 @@ SummaryRespPatterns$Block <- factor(SummaryRespPatterns$Block,
                                     levels=FactorLabels[[ExpName]]$Block$levels,
                                     labels=FactorLabels[[ExpName]]$Block$labels)
 
-RespPatternBar <- ggplot(data=SummaryRespPatterns, aes(x=interaction(Response, Condition), y=Mean, fill=Block)) +
-  stdbar + 
-  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) +
-  annotate("text", x=1:12, y=-3.5, label=rep(FactorLabels[[ExpName]]$Resp$levels, 4),
-           size=6) +
-  annotate("text", x=c(2, 5, 8, 11), y=-6, label=FactorLabels[[ExpName]]$Condition$labels,
-           size=7, fontface="bold") +
-  coord_cartesian(ylim=c(0, 45)) + 
-  theme(plot.margin = unit(c(1, 1, 5, 1), "lines"),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank()) +
-  annotate("segment", x=3.5, xend=3.5, y=-2.2, yend =-6.5,
-           colour="black", size=1.5) +
-  annotate("segment", x=6.5, xend=6.5, y=-2.2, yend =-6.5,
-           colour="black", size=1.5) +
-  annotate("segment", x=9.5, xend=9.5, y=-2.2, yend =-6.5,
-           colour="black", size=1.5) +
-  plottitletheme + legendtheme + blankbgtheme + yaxistheme 
-
-RespPatternBarLayout <- ggplot_gtable(ggplot_build(RespPatternBar))
-RespPatternBarLayout$layout$clip[RespPatternBarLayout$layout$name == "panel"] <- "off"
-grid.draw(RespPatternBarLayout) 
+if(Exp==5){
+  RespPatternBar <- ggplot(data=SummaryRespPatterns, aes(x=interaction(Response, Condition), y=Mean, fill=Block)) +
+    stdbar + 
+    geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) +
+    annotate("text", x=1:4, y=-3.5, label=rep(FactorLabels[[ExpName]]$Resp$levels, 2),
+             size=6) +
+    annotate("text", x=c(1.5, 3.5), y=-6, label=FactorLabels[[ExpName]]$Resp$levels,
+             size=7, fontface="bold") +
+    coord_cartesian(ylim=c(0, 45)) + 
+    theme(plot.margin = unit(c(1, 1, 5, 1), "lines"),
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank()) +
+    annotate("segment", x=2.5, xend=2.5, y=-2.2, yend =-6.5,
+             colour="black", size=1.5) +
+    plottitletheme + legendtheme + blankbgtheme + yaxistheme 
+  
+  RespPatternBarLayout <- ggplot_gtable(ggplot_build(RespPatternBar))
+  RespPatternBarLayout$layout$clip[RespPatternBarLayout$layout$name == "panel"] <- "off"
+  grid.draw(RespPatternBarLayout)
+}else{
+  RespPatternBar <- ggplot(data=SummaryRespPatterns, aes(x=interaction(Response, Condition), y=Mean, fill=Block)) +
+    stdbar + 
+    geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) +
+    annotate("text", x=1:12, y=-3.5, label=rep(FactorLabels[[ExpName]]$Resp$levels, 4),
+             size=6) +
+    annotate("text", x=c(2, 5, 8, 11), y=-6, label=FactorLabels[[ExpName]]$Condition$labels,
+             size=7, fontface="bold") +
+    coord_cartesian(ylim=c(0, 45)) + 
+    theme(plot.margin = unit(c(1, 1, 5, 1), "lines"),
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank()) +
+    annotate("segment", x=3.5, xend=3.5, y=-2.2, yend =-6.5,
+             colour="black", size=1.5) +
+    annotate("segment", x=6.5, xend=6.5, y=-2.2, yend =-6.5,
+             colour="black", size=1.5) +
+    annotate("segment", x=9.5, xend=9.5, y=-2.2, yend =-6.5,
+             colour="black", size=1.5) +
+    plottitletheme + legendtheme + blankbgtheme + yaxistheme 
+  
+  RespPatternBarLayout <- ggplot_gtable(ggplot_build(RespPatternBar))
+  RespPatternBarLayout$layout$clip[RespPatternBarLayout$layout$name == "panel"] <- "off"
+  grid.draw(RespPatternBarLayout)
+}
   
 
 
