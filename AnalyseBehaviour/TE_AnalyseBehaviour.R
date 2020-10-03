@@ -16,7 +16,7 @@ library(effsize)
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseStatsFunc.R")
 
-Exp <- 5
+Exp <- 3
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -918,9 +918,6 @@ if(Exp %in% c(3, 4)){
   
 }
 
-
-
-
 ########################### Get response Pattern ###########################
 
 TestGoodData$RespName <- factor(TestGoodData$Resp, 
@@ -998,7 +995,41 @@ if(Exp==5){
   grid.draw(RespPatternBarLayout)
 }
   
+########################### New analyses from Debbie ###########################
+#The point of the analysis here is that to correct for response bias, for each condition
+#take the correct response and subtract the proportion of times a particular object was 
+#endorsed a certain way
+#(p("old"|old))-(p("Old"|sim) + p("Old"|New))
+#(("old"/TotalOldTrials) - ("old"/(TotalNewTrials+TotalSimTrials)))
 
+#Option 1
+CorrectedProp1 <- ddply(TestGoodData, c("Participant", "Block", "ListType", "Condition", "RespName"), summarise, RespNum=length(Resp))
+CorrectedProp1$Acc <- factor(CorrectedProp1$Acc, levels=c(TRUE, FALSE), labels=c("Correct", "Incorrect"))
+CorrectedProp1.wide <- dcast(CorrectedProp1, Participant+Block+ListType+Condition~RespName, value.var = "RespNum")
+CorrectedProp1.wide$Total <- rowSums(CorrectedProp1.wide[, FactorLabels[[ExpName]]$Resp$levels], na.rm=TRUE)
+
+TotalCondTrials <- ddply(TestData, c("Participant", "Condition", "Block"), summarise,Trials = length(Participant))
+
+CorrectedProp1 <- merge(CorrectedProp1, TotalCondTrials, by=c("Participant", "Condition", "Block"), all=TRUE)
+
+#Option 2
+CorrectedProp2 <- ddply(TestGoodData, c("Participant", "Block", "Condition", "RespName", "Acc"), summarise, RespNum=length(Resp))
+CorrectedProp2$Acc <- factor(CorrectedProp2$Acc, levels=c(TRUE, FALSE), labels=c("Correct", "Incorrect"))
+CorrectedProp2.wide <- dcast(CorrectedProp2, Participant+Block+Condition+RespName~Acc, value.var = "RespNum")
+CorrectedProp2.wide$Total <- rowSums(CorrectedProp2.wide[, FactorLabels[[ExpName]]$Resp$levels], na.rm=TRUE)
+
+
+#
+
+
+
+TotalProp <- ddply(CorrectedProp, c("Participant", "Block", "Acc", "Condition", "RespName"))
+
+TotalProp <- ddply(TestGoodData, c("Participant", "Block"), summarise, 
+                   Old=sum(Condition=="Old"), NotOld=sum(Condition!="Old"),
+                   New=sum(Condition=="New"), NotNew=sum(Condition!="New"),
+                   SimHI=sum(Condition=="Similar_HI"), NotSimHI=sum(Condition!="Similar_HI"),
+                   SimLI=sum(Condition=="Similar_HI"), NotSimLI=sum(Condition!="Similar_LI"))
 
 ########################### Get participant info ###########################
 
