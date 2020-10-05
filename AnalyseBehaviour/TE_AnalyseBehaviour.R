@@ -124,6 +124,46 @@ AddTrialDur <- function(df){
   return(df)
 }
 
+#THANKS TO JENNA FOR WRITING THIS!!!!!!!!!
+#After 2 days of a brain short-circuit it seems that there is no easy way to do this without making a function
+#The function will output the numerator and denorminator for each measure, along withe ratios.
+MakeCorrectedProps <- function(df){
+  if(length(unique(df$Participant))>1 | length(unique(df$Block))>1){
+    stop(print("Should be ddply-ed with participant AND block"))
+  }
+  
+  Old_Corr_Num=nrow(df[df$Condition=="Old" & df$RespName=="Old",])
+  Old_Corr_Denom=nrow(df[df$Condition=="Old",])
+  Old_Incorr_Num=nrow(df[!(df$Condition=="Old") & df$RespName=="Old",])
+  Old_Incorr_Denom=nrow(df[!(df$Condition=="Old"),])
+  
+  SimHI_Corr_Num=nrow(df[df$Condition=="Similar_HI" & df$RespName=="Similar",])
+  SimHI_Corr_Denom=nrow(df[df$Condition=="Similar_HI",])
+  SimLI_Corr_Num=nrow(df[df$Condition=="Similar_LI" & df$RespName=="Similar",])
+  SimLI_Corr_Denom=nrow(df[df$Condition=="Similar_LI",])
+  Sim_Incorr_Num=nrow(df[!(df$ListType=="Similar") & df$RespName=="Similar",])
+  Sim_Incorr_Denom=nrow(df[!(df$ListType=="Similar"),])
+  
+  New_Corr_Num=nrow(df[df$Condition=="New" & df$RespName=="New",])
+  New_Corr_Denom=nrow(df[df$Condition=="New",])
+  New_Incorr_Num=nrow(df[!(df$Condition=="New") & df$RespName=="New",])
+  New_Incorr_Denom=nrow(df[!(df$Condition=="New"),])
+  
+  data.frame(Old_Corr_Num, Old_Corr_Denom, 
+             Old_Incorr_Num, Old_Incorr_Denom,
+             SimHI_Corr_Num, SimHI_Corr_Denom,
+             SimLI_Corr_Num, SimLI_Corr_Denom,
+             Sim_Incorr_Num, Sim_Incorr_Denom,
+             New_Corr_Num, New_Corr_Denom,
+             New_Incorr_Num, New_Incorr_Denom,
+             "Old_Corr_Ratio"=Old_Corr_Num/Old_Corr_Denom,
+             "Old_Incorr_Ratio"=Old_Incorr_Num/Old_Incorr_Denom,
+             "SimHI_Corr_Ratio"=SimHI_Corr_Num/SimHI_Corr_Denom,
+             "SimLI_Corr_Ratio"=SimLI_Corr_Num/SimLI_Corr_Denom,
+             "Sim_Incorr_Ratio"=Sim_Incorr_Num/Sim_Incorr_Denom,
+             "New_Corr_Ratio"=New_Corr_Num/New_Corr_Denom,
+             "New_Incorr_Ratio"=New_Incorr_Num/New_Incorr_Denom)
+}
 #
 
 #========================== Work with Log Data (check timings) ==========================
@@ -1002,34 +1042,45 @@ if(Exp==5){
 #(p("old"|old))-(p("Old"|sim) + p("Old"|New))
 #(("old"/TotalOldTrials) - ("old"/(TotalNewTrials+TotalSimTrials)))
 
-#Option 1
-CorrectedProp1 <- ddply(TestGoodData, c("Participant", "Block", "ListType", "Condition", "RespName"), summarise, RespNum=length(Resp))
-CorrectedProp1$Acc <- factor(CorrectedProp1$Acc, levels=c(TRUE, FALSE), labels=c("Correct", "Incorrect"))
-CorrectedProp1.wide <- dcast(CorrectedProp1, Participant+Block+ListType+Condition~RespName, value.var = "RespNum")
-CorrectedProp1.wide$Total <- rowSums(CorrectedProp1.wide[, FactorLabels[[ExpName]]$Resp$levels], na.rm=TRUE)
+ResponseProps <- ddply(TestGoodData, c("Participant","Block"), MakeCorrectedProps)
 
-TotalCondTrials <- ddply(TestData, c("Participant", "Condition", "Block"), summarise,Trials = length(Participant))
+ResponseProps$CorrectedOld <- ResponseProps$Old_Corr_Ratio - ResponseProps$Old_Incorr_Ratio
+ResponseProps$CorrectedSimHI <- ResponseProps$SimHI_Corr_Ratio - ResponseProps$Sim_Incorr_Ratio
+ResponseProps$CorrectedSimLI <- ResponseProps$SimLI_Corr_Ratio - ResponseProps$Sim_Incorr_Ratio
+ResponseProps$CorrectedNew <- ResponseProps$New_Corr_Ratio - ResponseProps$New_Incorr_Ratio
 
-CorrectedProp1 <- merge(CorrectedProp1, TotalCondTrials, by=c("Participant", "Condition", "Block"), all=TRUE)
+#Just keep the relevant columns
+CorrectedProps <- ResponseProps[, c("Participant", "Block", "CorrectedOld", "CorrectedSimHI", "CorrectedSimLI", "CorrectedNew")]
+CorrectedProps_Long <- melt(CorrectedProps, id.vars=c("Participant", "Block"))
+CorrectedProps_Long <- CorrectedProps_Long %>% dplyr::rename(Condition=variable, CorrectedProps=value)
 
-#Option 2
-CorrectedProp2 <- ddply(TestGoodData, c("Participant", "Block", "Condition", "RespName", "Acc"), summarise, RespNum=length(Resp))
-CorrectedProp2$Acc <- factor(CorrectedProp2$Acc, levels=c(TRUE, FALSE), labels=c("Correct", "Incorrect"))
-CorrectedProp2.wide <- dcast(CorrectedProp2, Participant+Block+Condition+RespName~Acc, value.var = "RespNum")
-CorrectedProp2.wide$Total <- rowSums(CorrectedProp2.wide[, FactorLabels[[ExpName]]$Resp$levels], na.rm=TRUE)
+SummaryCorrectedProps <- ddply(CorrectedProps_Long, c("Condition", "Block"), SummaryData, "CorrectedProps")
+SummaryCorrectedProps$Condition <- factor(SummaryCorrectedProps$Condition, 
+                                        levels=c("CorrectedOld", "CorrectedSimHI", "CorrectedSimLI", "CorrectedNew"),
+                                        labels=FactorLabels[[ExpName]]$Condition$labels)
+SummaryCorrectedProps$Block <- factor(SummaryCorrectedProps$Block, 
+                                      levels=FactorLabels[[ExpName]]$Block$levels,
+                                      labels=FactorLabels[[ExpName]]$Block$labels)
 
+
+CorrectedPropsBar <- ggplot(data=SummaryCorrectedProps, aes(x=Condition, y=Mean, fill=Block)) +
+  stdbar +
+  scale_fill_manual(values=c("#ff9a76", "#679b9b"),
+                    breaks=FactorLabels[[ExpName]]$Block$labels, 
+                    labels=FactorLabels[[ExpName]]$Block$labels) + 
+  #coord_cartesian(ylim=c(0, 0.48)) +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  labs(x="Condition", y="BPS Score") +
+  xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+
+
+#Run ANOVA on this measure
 
 #
 
 
 
-TotalProp <- ddply(CorrectedProp, c("Participant", "Block", "Acc", "Condition", "RespName"))
 
-TotalProp <- ddply(TestGoodData, c("Participant", "Block"), summarise, 
-                   Old=sum(Condition=="Old"), NotOld=sum(Condition!="Old"),
-                   New=sum(Condition=="New"), NotNew=sum(Condition!="New"),
-                   SimHI=sum(Condition=="Similar_HI"), NotSimHI=sum(Condition!="Similar_HI"),
-                   SimLI=sum(Condition=="Similar_HI"), NotSimLI=sum(Condition!="Similar_LI"))
 
 ########################### Get participant info ###########################
 
