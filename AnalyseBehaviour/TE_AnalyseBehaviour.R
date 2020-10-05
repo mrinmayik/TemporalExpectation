@@ -1044,38 +1044,38 @@ if(Exp==5){
 
 ResponseProps <- ddply(TestGoodData, c("Participant","Block"), MakeCorrectedProps)
 
-ResponseProps$CorrectedOld <- ResponseProps$Old_Corr_Ratio - ResponseProps$Old_Incorr_Ratio
-ResponseProps$CorrectedSimHI <- ResponseProps$SimHI_Corr_Ratio - ResponseProps$Sim_Incorr_Ratio
-ResponseProps$CorrectedSimLI <- ResponseProps$SimLI_Corr_Ratio - ResponseProps$Sim_Incorr_Ratio
-ResponseProps$CorrectedNew <- ResponseProps$New_Corr_Ratio - ResponseProps$New_Incorr_Ratio
+ResponseProps$Old <- ResponseProps$Old_Corr_Ratio - ResponseProps$Old_Incorr_Ratio
+ResponseProps$Similar_HI <- ResponseProps$SimHI_Corr_Ratio - ResponseProps$Sim_Incorr_Ratio
+ResponseProps$Similar_LI <- ResponseProps$SimLI_Corr_Ratio - ResponseProps$Sim_Incorr_Ratio
+ResponseProps$New <- ResponseProps$New_Corr_Ratio - ResponseProps$New_Incorr_Ratio
 
-#Just keep the relevant columns
-CorrectedProps <- ResponseProps[, c("Participant", "Block", "CorrectedOld", "CorrectedSimHI", "CorrectedSimLI", "CorrectedNew")]
+CorrectedProps <- ResponseProps[, c("Participant", "Block", FactorLabels[[ExpName]]$Condition$levels)]
 CorrectedProps_Long <- melt(CorrectedProps, id.vars=c("Participant", "Block"))
 CorrectedProps_Long <- CorrectedProps_Long %>% dplyr::rename(Condition=variable, CorrectedProps=value)
 
 SummaryCorrectedProps <- ddply(CorrectedProps_Long, c("Condition", "Block"), SummaryData, "CorrectedProps")
 SummaryCorrectedProps$Condition <- factor(SummaryCorrectedProps$Condition, 
-                                        levels=c("CorrectedOld", "CorrectedSimHI", "CorrectedSimLI", "CorrectedNew"),
-                                        labels=FactorLabels[[ExpName]]$Condition$labels)
+                                          levels=FactorLabels[[ExpName]]$Condition$levels,
+                                          labels=FactorLabels[[ExpName]]$Condition$labels)
 SummaryCorrectedProps$Block <- factor(SummaryCorrectedProps$Block, 
                                       levels=FactorLabels[[ExpName]]$Block$levels,
                                       labels=FactorLabels[[ExpName]]$Block$labels)
-
 
 CorrectedPropsBar <- ggplot(data=SummaryCorrectedProps, aes(x=Condition, y=Mean, fill=Block)) +
   stdbar +
   scale_fill_manual(values=c("#ff9a76", "#679b9b"),
                     breaks=FactorLabels[[ExpName]]$Block$labels, 
                     labels=FactorLabels[[ExpName]]$Block$labels) + 
-  #coord_cartesian(ylim=c(0, 0.48)) +
+  coord_cartesian(ylim=c(0, 0.8)) +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  labs(x="Condition", y="BPS Score") +
+  labs(x="Condition", y="Corrected Recognition") +
   xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
 
 
-#Run ANOVA on this measure
-
+#Do stats on it
+CorrectedProp_ANOVA <- ezANOVA(data=CorrectedProps_Long, dv=CorrectedProps, wid=Participant, within=c(Block, Condition), 
+                     detailed=TRUE, type=2)
+CorrectedProp_ANOVA$ANOVA
 #
 
 
