@@ -477,9 +477,15 @@ TestRTBar <- ggplot(data=SummaryTestRT, aes(x=Condition, y=Mean, fill=Block)) +
   xaxistheme + yaxistheme + plottitletheme + legendtheme+ canvastheme + blankbgtheme
 
 #Do stats on it
+TestRT$Block <- factor(TestRT$Block)
+TestRT$Condition <- factor(TestRT$Condition)
 RT_ANOVA <- ezANOVA(data=TestRT, dv=Mean, wid=Participant, within=c(Block, Condition), 
                      detailed=TRUE, type=3)
-RT_ANOVA$ANOVA
+aovEffectSize(RT_ANOVA)$ANOVA
+
+RT_BF <- anovaBF(formula=Mean~Block*Condition, data=TestRT)
+RT_BF/max(RT_BF)
+
 #Another way:
 #summary(aov(formula=Mean~(Block*Condition)+Error(Participant/(Block*Condition)), data=TestRT))
 
