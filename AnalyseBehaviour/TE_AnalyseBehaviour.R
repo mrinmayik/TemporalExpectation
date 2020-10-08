@@ -970,6 +970,47 @@ if(Exp %in% c(3, 4)){
   
 }
 
+#### Check whether measures are above chance
+
+StarkAboveChance <- list("TradRecog"=c(), "BPSScore"=c(), "TPData"=c())
+for(block in FactorLabels[[ExpName]]$Block$levels){
+  StarkAboveChance$TradRecog[[block]] <- onesample_ttest(TradRecogScore[TradRecogScore$Block==block, "TradRecogScore"], chance=0)
+  CohensD <- cohen.d(d=TradRecogScore[TradRecogScore$Block==block, "TradRecogScore"], f=NA, mu=0)
+  StarkAboveChance[["TPData"]] <- rbind(StarkAboveChance[["TPData"]], 
+                                        data.frame(Condition="TradRecog", Block=block, 
+                                                   t=StarkAboveChance$TradRecog[[block]]$ttest$statistic,
+                                                   p=StarkAboveChance$TradRecog[[block]]$ttest$p.value,
+                                                   d=CohensD$estimate))
+  
+  if(Exp!=5){
+    #Check BPS Score
+    for(cond in FactorLabels[[ExpName]]$Condition$levels[2:3]){
+      StarkAboveChance$BPSScore[[block]][[cond]] <- 
+        onesample_ttest(BPSScore[BPSScore$Block==block & BPSScore$Condition==cond, "BPSScore"], chance=0)
+      CohensD <- cohen.d(d=BPSScore[BPSScore$Block==block & BPSScore$Condition==cond, "BPSScore"], f=NA, mu=0)
+      StarkAboveChance[["TPData"]] <- rbind(StarkAboveChance$TPData, 
+                                             data.frame(Condition=cond, Block=block, 
+                                                        t=StarkAboveChance$BPSScore[[block]][[cond]]$ttest$statistic,
+                                                        p=StarkAboveChance$BPSScore[[block]][[cond]]$ttest$p.value,
+                                                        d=CohensD$estimate))
+    }
+  }
+}
+
+
+
+for(cond in FactorLabels[[ExpName]]$Condition$levels[2:4]){
+  
+    DPrimeAboveChance[[block]][[cond]] <- onesample_ttest(DprimeData[DprimeData$Block==block, cond], chance=0)
+    CohensD <- cohen.d(d=DprimeData[DprimeData$Block==block, cond], f=NA, mu=0)
+    DPrimeAboveChance[["TPData"]] <- rbind(DPrimeAboveChance$TPData, 
+                                           data.frame(Condition=cond, Block=block, 
+                                                      t=DPrimeAboveChance[[block]][[cond]]$ttest$statistic,
+                                                      p=DPrimeAboveChance[[block]][[cond]]$ttest$p.value,
+                                                      d=CohensD$estimate))
+  }
+
+
 ########################### Get response Pattern ###########################
 
 TestGoodData$RespName <- factor(TestGoodData$Resp, 
