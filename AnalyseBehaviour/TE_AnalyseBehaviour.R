@@ -17,7 +17,7 @@ library(psychReport)
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseStatsFunc.R")
 
-Exp <- 3
+Exp <- 4
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -956,7 +956,7 @@ if(Exp %in% c(3, 4)){
   BPSScore_BF <- anovaBF(formula=BPSScore~Block*Condition, data=BPSScore)
   BPSScore_BF/max(BPSScore_BF)
   
-  #Post-hoc t-tests for a-priori hypotheses
+  #Post-hoc t-tests between blocks for a-priori hypotheses
   for(cond in c("Similar_HI", "Similar_LI")){
     BPSScore_Cond <- BPSScore[BPSScore$Condition==cond,]
     
@@ -968,6 +968,13 @@ if(Exp %in% c(3, 4)){
     print(BPSScore_ttest$ttest)
   }
   
+  #Collapse across block
+  #Use the collapsed data calculated for dprime
+  PropSimData_byCond <- PropResp_byCond[PropResp_byCond$Condition %in% c("Similar_HI", "Similar_LI"), ]
+  
+  BPSScore_byCond <- ddply(PropSimData_byCond, c("Participant", "Condition"), summarise, 
+                           BPSScore=PropResp[RespType=="CR"]-PropResp[RespType=="Incorr"])
+  SummaryBPSScore_byCond <- ddply(BPSScore_byCond, c("Condition"), SummaryData, "BPSScore")
 }
 
 #### Check whether measures are above chance
