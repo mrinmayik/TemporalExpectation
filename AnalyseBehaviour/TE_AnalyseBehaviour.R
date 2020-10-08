@@ -997,20 +997,6 @@ for(block in FactorLabels[[ExpName]]$Block$levels){
   }
 }
 
-
-
-for(cond in FactorLabels[[ExpName]]$Condition$levels[2:4]){
-  
-    DPrimeAboveChance[[block]][[cond]] <- onesample_ttest(DprimeData[DprimeData$Block==block, cond], chance=0)
-    CohensD <- cohen.d(d=DprimeData[DprimeData$Block==block, cond], f=NA, mu=0)
-    DPrimeAboveChance[["TPData"]] <- rbind(DPrimeAboveChance$TPData, 
-                                           data.frame(Condition=cond, Block=block, 
-                                                      t=DPrimeAboveChance[[block]][[cond]]$ttest$statistic,
-                                                      p=DPrimeAboveChance[[block]][[cond]]$ttest$p.value,
-                                                      d=CohensD$estimate))
-  }
-
-
 ########################### Get response Pattern ###########################
 
 TestGoodData$RespName <- factor(TestGoodData$Resp, 
