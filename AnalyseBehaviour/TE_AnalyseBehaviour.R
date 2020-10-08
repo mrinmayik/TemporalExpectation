@@ -9,6 +9,7 @@ library(stringr)
 library(ez)
 library(BayesFactor)
 library(effsize)
+library(psychReport)
 
 ########################## Set Admin variables ##########################
 
@@ -907,6 +908,10 @@ TradRecog_ttest <- twosample_ttest(grp1=TradRecogScore[TradRecogScore$Block=="TR
                                 paired=TRUE)
 TradRecog_ttest
 
+TradRecog_CohensD <- cohen.d(formula=TradRecogScore~Block | Subject(Participant), 
+                             data=TradRecogScore, paired=TRUE, pooled=TRUE,
+                             within=TRUE)
+
 TradRecog_BF <- ttestBF(x=TradRecogScore[TradRecogScore$Block=="TR", "TradRecogScore"], 
                         y=TradRecogScore[TradRecogScore$Block=="TI", "TradRecogScore"], 
                         paired=TRUE)
@@ -946,11 +951,12 @@ if(Exp %in% c(3, 4)){
   
   BPSScore_ANOVA <- ezANOVA(data=BPSScore, dv=BPSScore, wid=Participant, within=c(Block, Condition), 
                           detailed=TRUE, type=2)
-  BPSScore_ANOVA$ANOVA
+  aovEffectSize(BPSScore_ANOVA)$ANOVA
   
   BPSScore_BF <- anovaBF(formula=BPSScore~Block*Condition, data=BPSScore)
   BPSScore_BF/max(BPSScore_BF)
   
+  #Post-hoc t-tests for a-priori hypotheses
   for(cond in c("Similar_HI", "Similar_LI")){
     BPSScore_Cond <- BPSScore[BPSScore$Condition==cond,]
     
