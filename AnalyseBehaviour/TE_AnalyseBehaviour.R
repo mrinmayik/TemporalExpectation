@@ -17,7 +17,7 @@ library(psychReport)
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseStatsFunc.R")
 
-Exp <- 4
+Exp <- 5
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -29,19 +29,19 @@ Save=0
 ExcludeTrials <- FALSE
 
 FactorLabels <- list("Exp3" = list("Block" = list("levels"=c("TR", "TI"), 
-                                                  "labels"=c("Regular", "Irregular")),
+                                                  "labels"=c("Structured", "Unstructured")),
                                    "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
-                                                      "labels"=c("Old", "Similar: HS", "Similar: LS", "New")),
+                                                      "labels"=c("Old", "High Similarity", "Low Similarity", "New")),
                                    "Resp" = list("levels"=c("Old", "Similar", "New"),
                                                  "labels"=c(1, 2, 3))),
                      "Exp4" = list("Block" = list("levels"=c("TR", "TI"), 
-                                                  "labels"=c("Regular", "Irregular")),
+                                                  "labels"=c("Structured", "Unstructured")),
                                    "Condition" = list("levels"=c("Old", "Similar_HI", "Similar_LI", "New"), 
-                                                      "labels"=c("Old", "Similar: HS", "Similar: LS", "New")),
+                                                      "labels"=c("Old", "High Similarity", "Low Similarity", "New")),
                                    "Resp" = list("levels"=c("Old", "Similar", "New"),
                                                  "labels"=c(1, 2, 3))),
                      "Exp5" = list("Block" = list("levels"=c("TR", "TI"), 
-                                                  "labels"=c("Regular", "Irregular")),
+                                                  "labels"=c("Structured", "Unstructured")),
                                    "Condition" = list("levels"=c("Old", "New"), 
                                                       "labels"=c("Old", "New")),
                                    "Resp" = list("levels"=c("Old", "New"),
@@ -895,13 +895,22 @@ SummaryTradRecog$Block <- factor(SummaryTradRecog$Block,
 
 TradRecogBar <- ggplot(data=SummaryTradRecog, aes(x=Block, y=Mean, fill=Block)) +
   stdbar +
-  scale_fill_manual(values=c("#ff9a76", "#679b9b"),
+  scale_fill_manual(values=c("#444444", "#aaaaaa"),
                     breaks=FactorLabels[[ExpName]]$Block$labels, 
                     labels=FactorLabels[[ExpName]]$Block$labels) + 
-  coord_cartesian(ylim=c(0, 0.85)) +
+  coord_cartesian(ylim=c(0, 1)) +
   geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-  labs(x="Condition", y="Hits minus False Alarms") +
-  xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
+  labs(x="Timing", y="Corrected Recognition") + 
+  papertickstheme + paperxaxistheme + paperyaxistheme  + blankbgtheme + papercanvastheme
+
+if(Save==1){
+  jpeg(filename=sprintf("%s/Manuscript/Figures/TradRecogBar_%s.jpeg", 
+                        BasePath, ExpName), 
+       width=2500, height=3000, res=300) 
+  plot((TradRecogBar + theme(legend.position="None") + 
+          scale_y_continuous(expand = c(0,0))))
+  dev.off()
+}
 
 TradRecog_ttest <- twosample_ttest(grp1=TradRecogScore[TradRecogScore$Block=="TR", "TradRecogScore"],
                                 grp2=TradRecogScore[TradRecogScore$Block=="TI", "TradRecogScore"],
@@ -935,14 +944,21 @@ if(Exp %in% c(3, 4)){
   
   BPSBar <- ggplot(data=SummaryBPSScore, aes(x=Condition, y=Mean, fill=Block)) +
     stdbar +
-    scale_fill_manual(values=c("#ff9a76", "#679b9b"),
+    scale_fill_manual(values=c("#444444", "#aaaaaa"),
                       breaks=FactorLabels[[ExpName]]$Block$labels, 
                       labels=FactorLabels[[ExpName]]$Block$labels) + 
-    coord_cartesian(ylim=c(0, 0.48)) +
+    coord_cartesian(ylim=c(0, 1)) +
     geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-    labs(x="Condition", y="BPS Score") +
-    xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
-  
+    labs(x="Object Type", y="BPS Score") +
+    papertickstheme + paperxaxistheme + paperyaxistheme + blankbgtheme + papercanvastheme + paperlegendtheme
+  if(Save==1){
+    jpeg(filename=sprintf("%s/Manuscript/Figures/BPSBar_%s.jpeg", 
+                          BasePath, ExpName), 
+         width=3000, height=3000, res=300)
+    plot((BPSBar + theme(legend.position="None") + 
+            scale_y_continuous(expand = c(0,0))))
+    dev.off()
+  }
   
   #ANOVA on BPS
   #BPSScore_Long <- melt(BPSScore, id.vars=c("Participant", "Block"))
