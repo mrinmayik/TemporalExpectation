@@ -18,7 +18,7 @@ library(grid)
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseStatsFunc.R")
 
-Exp <- 3
+Exp <- 4
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -753,7 +753,7 @@ if(Exp==5){
     xaxistheme + yaxistheme + plottitletheme + legendtheme + canvastheme + blankbgtheme
   
   DPrimeDot <- ggplot(data=DprimeData_Long, aes(x=Condition, y=DPrime, fill=Block)) +
-    stat_summary(fun.y=mean, geom="bar", position="dodge", color="#000000", size=1.5) +
+    stat_summary(fun=mean, geom="bar", position="dodge", color="#000000", size=1.5) +
     stat_summary(fun.data=mean_cl_normal, geom="errorbar",
                  width=0.3, size=0.9, position=position_dodge(.9)) + 
     scale_fill_manual(values=c("#ff9a76", "#679b9b"),
@@ -1145,12 +1145,16 @@ CorrectedProp_ANOVA$ANOVA
 #First, get the block order for each participant
 #Just keep the first trial for each participant, for each block
 FirstTrials <- EncodeData[EncodeData$Trial==1,]
+
 #Then subtract the time at which the object was presented in the TR block, from the TI block
 BlockOrder <- ddply(FirstTrials, c("Participant"), summarise, TimeDiff=ObjectTime[Block=="TR"]-ObjectTime[Block=="TI"])
 TRFirst <- BlockOrder[BlockOrder$TimeDiff<0, "Participant"]
 TIFirst <- BlockOrder[BlockOrder$TimeDiff>0, "Participant"]
+#For exp 4 there will be one extra person here, because the person who got excluded for low accuracy
+#was never excluded from the encoding data. This is fine, because this list is only applied to the test data
 length(TRFirst)+length(TIFirst)==24
 
+######Now apply to traditional recognition
 TradRecogScore[TradRecogScore$Participant %in% TRFirst, "BlockOrder"] <- "TRFirst"
 TradRecogScore[TradRecogScore$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
 CheckMerge(TradRecogScore)
@@ -1177,9 +1181,29 @@ TradRecogBlockOrderBar <- ggplot(data=SummaryTradRecogBlockOrder, aes(x=BlockOrd
   labs(x="Block Order", y="Corrected Recognition") +
   papertickstheme + paperxaxistheme + paperyaxistheme + blankbgtheme + papercanvastheme + paperlegendtheme
 
+
+########Then apply to BPS score
 if(Exp %in% c(3, 4)){
-  BPSSc 
+  BPSScore[BPSScore$Participant %in% TRFirst, "BlockOrder"] <- "TRFirst"
+  BPSScore[BPSScore$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
+  CheckMerge(BPSScore)
+  
+  BPSScoreBlockOrder_ANOVA <- ezANOVA(data=BPSScore, dv=BPSScore, wid=Participant, within=c(Condition, Block),
+                                       between=BlockOrder, detailed=TRUE, type=2)
+  aovEffectSize(BPSScoreBlockOrder_ANOVA)$ANOVA
+  
+  SummaryBPSScoreBlockOrder <- ddply(BPSScore, c("Block", "BlockOrder"), SummaryData, "BPSScore")
+  SummaryBPSScoreBlockOrder$Block <- factor(SummaryBPSScoreBlockOrder$Block,
+                                             levels=FactorLabels[[ExpName]]$Block$levels,
+                                             labels=FactorLabels[[ExpName]]$Block$labels)
+  SummaryBPSScoreBlockOrder$BlockOrder <- factor(SummaryBPSScoreBlockOrder$BlockOrder,
+                                                  levels=c("TRFirst", "TIFirst"),
+                                                  labels=c("Regular First", "Irregular First"))
 }
+
+########Then apply to BPS score
+
+
 #
 
 
