@@ -10,6 +10,7 @@ library(ez)
 library(BayesFactor)
 library(effsize)
 library(psychReport)
+library(grid)
 
 ########################## Set Admin variables ##########################
 
@@ -17,7 +18,7 @@ library(psychReport)
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseStatsFunc.R")
 
-Exp <- 5
+Exp <- 3
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -1150,11 +1151,35 @@ TRFirst <- BlockOrder[BlockOrder$TimeDiff<0, "Participant"]
 TIFirst <- BlockOrder[BlockOrder$TimeDiff>0, "Participant"]
 length(TRFirst)+length(TIFirst)==24
 
-TestGoodData[TestGoodData$Participant %in% TRFirst, "BlockOrder"] <- "TRFirst"
-TestGoodData[TestGoodData$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
-CheckMerge(TestGoodData)
+TradRecogScore[TradRecogScore$Participant %in% TRFirst, "BlockOrder"] <- "TRFirst"
+TradRecogScore[TradRecogScore$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
+CheckMerge(TradRecogScore)
 
+TradRecogBlockOrder_ANOVA <- ezANOVA(data=TradRecogScore, dv=TradRecogScore, wid=Participant, within=Block,
+                                     between=BlockOrder, detailed=TRUE, type=2)
+aovEffectSize(TradRecogBlockOrder_ANOVA)$ANOVA
 
+SummaryTradRecogBlockOrder <- ddply(TradRecogScore, c("Block", "BlockOrder"), SummaryData, "TradRecogScore")
+SummaryTradRecogBlockOrder$Block <- factor(SummaryTradRecogBlockOrder$Block,
+                                           levels=FactorLabels[[ExpName]]$Block$levels,
+                                           labels=FactorLabels[[ExpName]]$Block$labels)
+SummaryTradRecogBlockOrder$BlockOrder <- factor(SummaryTradRecogBlockOrder$BlockOrder,
+                                                levels=c("TRFirst", "TIFirst"),
+                                                labels=c("Regular First", "Irregular First"))
+
+TradRecogBlockOrderBar <- ggplot(data=SummaryTradRecogBlockOrder, aes(x=BlockOrder, y=Mean, fill=Block)) +
+  stdbar +
+  scale_fill_manual(values=c("#444444", "#aaaaaa"),
+                    breaks=FactorLabels[[ExpName]]$Block$labels, 
+                    labels=FactorLabels[[ExpName]]$Block$labels) + 
+  coord_cartesian(ylim=c(0, 1)) +
+  geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+  labs(x="Block Order", y="Corrected Recognition") +
+  papertickstheme + paperxaxistheme + paperyaxistheme + blankbgtheme + papercanvastheme + paperlegendtheme
+
+if(Exp %in% c(3, 4)){
+  BPSSc 
+}
 #
 
 
