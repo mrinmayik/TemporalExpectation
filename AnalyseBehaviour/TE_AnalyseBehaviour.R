@@ -18,7 +18,7 @@ library(grid)
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseAdminVar.R")
 source("~/GitDir/GeneralScripts/InitialiseR/InitialiseStatsFunc.R")
 
-Exp <- 4
+Exp <- 3
 ExpName <- paste("Exp", Exp, sep="")
 BasePath <- "/Users/mrinmayi/GoogleDrive/Mrinmayi/Research/TemporalExpectation/"
 DataPath <- paste(BasePath, "Experiment/Experiment", Exp, "/Data/", sep = "")
@@ -1201,8 +1201,14 @@ if(Exp %in% c(3, 4)){
                                                   labels=c("Regular First", "Irregular First"))
 }
 
-########Then apply to BPS score
+########Then apply to Dprime
+DprimeData_Long[DprimeData_Long$Participant %in% TRFirst, "BlockOrder"] <- "TRFirst"
+DprimeData_Long[DprimeData_Long$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
+CheckMerge(DprimeData_Long)
 
+DPrimeBlockOrder_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=c(Condition, Block),
+                                    between=BlockOrder, detailed=TRUE, type=2)
+aovEffectSize(BPSScoreBlockOrder_ANOVA)$ANOVA
 
 #
 
