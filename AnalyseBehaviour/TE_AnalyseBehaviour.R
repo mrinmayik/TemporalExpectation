@@ -1138,6 +1138,23 @@ CorrectedPropsBar <- ggplot(data=SummaryCorrectedProps, aes(x=Condition, y=Mean,
 CorrectedProp_ANOVA <- ezANOVA(data=CorrectedProps_Long, dv=CorrectedProps, wid=Participant, within=c(Block, Condition), 
                      detailed=TRUE, type=2)
 CorrectedProp_ANOVA$ANOVA
+
+########################### Look at analyses by block order ###########################
+
+#First, get the block order for each participant
+#Just keep the first trial for each participant, for each block
+FirstTrials <- EncodeData[EncodeData$Trial==1,]
+#Then subtract the time at which the object was presented in the TR block, from the TI block
+BlockOrder <- ddply(FirstTrials, c("Participant"), summarise, TimeDiff=ObjectTime[Block=="TR"]-ObjectTime[Block=="TI"])
+TRFirst <- BlockOrder[BlockOrder$TimeDiff<0, "Participant"]
+TIFirst <- BlockOrder[BlockOrder$TimeDiff>0, "Participant"]
+length(TRFirst)+length(TIFirst)==24
+
+TestGoodData[TestGoodData$Participant %in% TRFirst, "BlockOrder"] <- "TRFirst"
+TestGoodData[TestGoodData$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
+CheckMerge(TestGoodData)
+
+
 #
 
 
