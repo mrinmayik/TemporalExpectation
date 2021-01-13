@@ -660,10 +660,12 @@ if(Exp==5){
   DPrimeAboveChance <- list("TPData"=c())
   for(block in FactorLabels[[ExpName]]$Block$levels){
     DPrimeAboveChance[[block]][["New"]] <- onesample_ttest(DprimeData[DprimeData$Block==block, "DPrime"], chance=0)
+    CohensD <- cohen.d(d=DprimeData[DprimeData$Block==block, "DPrime"], f=NA, mu=0)
     DPrimeAboveChance[["TPData"]] <- rbind(DPrimeAboveChance$TPData, 
                                            data.frame(Condition="New", Block=block, 
                                                       t=DPrimeAboveChance[[block]][["New"]]$ttest$statistic,
-                                                      p=DPrimeAboveChance[[block]][["New"]]$ttest$p.value))
+                                                      p=DPrimeAboveChance[[block]][["New"]]$ttest$p.value,
+                                                      d=CohensD$estimate))
   }
   
   
@@ -702,6 +704,7 @@ if(Exp==5){
                                   grp2=DprimeData[DprimeData$Block=="TI", "DPrime"],
                                   paired=TRUE)
   Dprime_ANOVA
+  cohen.d(formula=DPrime~Block | Subject(Participant), data=DprimeData, paired=TRUE, pooled=TRUE, within=TRUE)
   
   Dprime_BF <- ttestBF(x=DprimeData[DprimeData$Block=="TR", "DPrime"], 
                        y=DprimeData[DprimeData$Block=="TI", "DPrime"], 
@@ -779,7 +782,7 @@ if(Exp==5){
   
   Dprime_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=c(Block, Condition), 
                           detailed=TRUE, type=2)
-  Dprime_ANOVA$ANOVA
+  aovEffectSize(Dprime_ANOVA)$ANOVA
   
   DPrime_BF <- anovaBF(formula=DPrime~Block*Condition, data=DprimeData_Long)
   DPrime_BF/max(DPrime_BF)
@@ -1275,7 +1278,7 @@ if(Exp==5){
   DprimeData_Long[DprimeData_Long$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
   CheckMerge(DprimeData_Long)
   
-  DPrimeBlockOrder_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=c(Condition, Block, BlockOrder),
+  DPrimeBlockOrder_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=c(Condition, Block),
                                     between=BlockOrder, detailed=TRUE, type=2)
   aovEffectSize(DPrimeBlockOrder_ANOVA)$ANOVA
   
@@ -1287,8 +1290,8 @@ if(Exp==5){
   
   for(blockord in c("TRFirst", "TIFirst")){
     print(sprintf("Difference between TR and TI in %s", blockord))
-    print(twosample_ttest(grp1=DprimeBlockOrder_BF[DprimeBlockOrder_BF$BlockOrder==blockord & DprimeBlockOrder_BF$Block=="TR", "DPrime"], 
-                          grp2=DprimeBlockOrder_BF[DprimeBlockOrder_BF$BlockOrder==blockord & DprimeBlockOrder_BF$Block=="TI", "DPrime"], 
+    print(twosample_ttest(grp1=DprimeData_Long[DprimeData_Long$BlockOrder==blockord & DprimeData_Long$Block=="TR", "DPrime"], 
+                          grp2=DprimeData_Long[DprimeData_Long$BlockOrder==blockord & DprimeData_Long$Block=="TI", "DPrime"], 
                           paired=TRUE))
   }
   
