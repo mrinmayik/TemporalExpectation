@@ -1394,6 +1394,64 @@ if(Exp==5){
   }
 }
 
+
+#Combine across exps 3 and 4 and check effect of block order
+DPrime_Exps3and4 <- rbind(read.xlsx(sprintf("%s/Manuscript/Revisions_Round1/DprimeData_Long_Exp3.xlsx", BasePath)),
+                          read.xlsx(sprintf("%s/Manuscript/Revisions_Round1/DprimeData_Long_Exp4.xlsx", BasePath)))
+DPrime_Exps3and4 <- DPrime_Exps3and4[DPrime_Exps3and4$Condition=="New", ]
+DPrime_Exps3and4$Participant_Exp <- paste(DPrime_Exps3and4$Participant, "_", DPrime_Exps3and4$Exp, sep="")
+twosample_ttest(grp1=DPrime_Exps3and4[DPrime_Exps3and4$Exp=="Exp3", "DPrime"], 
+                grp2=DPrime_Exps3and4[DPrime_Exps3and4$Exp=="Exp4", "DPrime"], 
+                paired=FALSE)
+
+ezANOVA(data=DPrime_Exps3and4, dv=DPrime, wid=Participant_Exp, within=Block, between=c(BlockOrder, Exp), detailed=TRUE, type=2)
+
+for(blockord in c("TRFirst", "TIFirst")){
+  print(sprintf("Difference between TR and TI in %s", blockord))
+  print(twosample_ttest(grp1=DPrime_Exps3and4[DPrime_Exps3and4$BlockOrder==blockord & DPrime_Exps3and4$Block=="TR", "DPrime"], 
+                        grp2=DPrime_Exps3and4[DPrime_Exps3and4$BlockOrder==blockord & DPrime_Exps3and4$Block=="TI", "DPrime"], 
+                        paired=TRUE))
+  
+  SummaryDprimeExps3and4 <- ddply(DPrime_Exps3and4, c("Block", "BlockOrder"), SummaryData, "DPrime")
+  SummaryDprimeExps3and4$BlockOrder <- factor(SummaryDprimeExps3and4$BlockOrder,
+                                               levels=c("TRFirst", "TIFirst"),
+                                               labels=c("Structured First", "Unstructured First"))
+  if(blockord=="TRFirst"){
+    SummaryDprimeExps3and4$Block <- factor(SummaryDprimeExps3and4$Block,
+                                            levels=c("TR", "TI"),
+                                            labels=c("Structured", "Unstructured"))
+    blockord_label <- "Structured First"
+    fillvalues <- c("#444444", "#aaaaaa")
+    fillbreaks <- c("Structured", "Unstructured")
+    fillabels <- c("Structured", "Unstructured")
+  }else if(blockord=="TIFirst"){
+    SummaryDprimeExps3and4$Block <- factor(SummaryDprimeExps3and4$Block,
+                                            levels=c("TI", "TR"),
+                                            labels=c("Unstructured", "Structured"))
+    blockord_label <- "Unstructured First"
+    fillvalues <- c("#aaaaaa", "#444444")
+    fillbreaks <- c("Unstructured", "Structured")
+    fillabels <- c("Unstructured", "Structured")
+  }
+  
+  DPrimeBlockOrderBar <- ggplot(data=SummaryDprimeExps3and4[SummaryDprimeExps3and4$BlockOrder==blockord_label,], 
+                                aes(x=Block, y=Mean, fill=Block)) +
+    stdbar + 
+    scale_fill_manual(values=fillvalues, breaks=fillbreaks, labels=fillabels) + 
+    coord_cartesian(ylim=c(0, 3.5)) +
+    geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+    labs(x="Timing", y="D Prime") + theme(legend.position="None") +
+    papertickstheme + paperxaxistheme + paperyaxistheme + blankbgtheme + papercanvastheme + paperlegendtheme 
+  assign(paste("SummaryDprimeExps3and4_", blockord, sep=""), DPrimeBlockOrderBar)
+}  
+
+for(block in FactorLabels$Exp3$Block$levels){
+  print(sprintf("Difference between TRFirst and TIFirst in %s", block))
+  print(twosample_ttest(grp1=DPrime_Exps3and4[DPrime_Exps3and4$Block==block & DPrime_Exps3and4$BlockOrder=="TRFirst", "DPrime"], 
+                        grp2=DPrime_Exps3and4[DPrime_Exps3and4$Block==block & DPrime_Exps3and4$BlockOrder=="TIFirst", "DPrime"], 
+                        paired=FALSE))
+}
+  
 #
 
 
