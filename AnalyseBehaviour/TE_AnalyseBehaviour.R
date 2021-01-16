@@ -1308,6 +1308,11 @@ if(Exp==5){
 }else if(Exp %in% c(3,4)){
   DprimeData_Long[DprimeData_Long$Participant %in% TRFirst, "BlockOrder"] <- "TRFirst"
   DprimeData_Long[DprimeData_Long$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
+  
+  DprimeData_Long[DprimeData_Long$BlockOrder=="TRFirst" & DprimeData_Long$Block=="TR", "BlockNum"] <- "Block1"
+  DprimeData_Long[DprimeData_Long$BlockOrder=="TRFirst" & DprimeData_Long$Block=="TI", "BlockNum"] <- "Block2"
+  DprimeData_Long[DprimeData_Long$BlockOrder=="TIFirst" & DprimeData_Long$Block=="TI", "BlockNum"] <- "Block1"
+  DprimeData_Long[DprimeData_Long$BlockOrder=="TIFirst" & DprimeData_Long$Block=="TR", "BlockNum"] <- "Block2"
   CheckMerge(DprimeData_Long)
   
   #Only keep dprime for new data to make this comparable with the Thavabalasingam et al. (2016) results
@@ -1325,7 +1330,7 @@ if(Exp==5){
                           y=DprimeData_Long[DprimeData_Long$Block=="TI", "DPrime"], 
                           paired=TRUE)
   
-  DPrimeBlockOrder_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=Block,
+  DPrimeBlockOrder_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=BlockNum,
                                     between=BlockOrder, detailed=TRUE, type=2)
   aovEffectSize(DPrimeBlockOrder_ANOVA)$ANOVA
   
@@ -1404,7 +1409,15 @@ twosample_ttest(grp1=DPrime_Exps3and4[DPrime_Exps3and4$Exp=="Exp3", "DPrime"],
                 grp2=DPrime_Exps3and4[DPrime_Exps3and4$Exp=="Exp4", "DPrime"], 
                 paired=FALSE)
 
-ezANOVA(data=DPrime_Exps3and4, dv=DPrime, wid=Participant_Exp, within=Block, between=c(BlockOrder, Exp), detailed=TRUE, type=2)
+
+DPrime_Exps3and4[DPrime_Exps3and4$BlockOrder=="TRFirst" & DPrime_Exps3and4$Block=="TR", "BlockNum"] <- "Block1"
+DPrime_Exps3and4[DPrime_Exps3and4$BlockOrder=="TRFirst" & DPrime_Exps3and4$Block=="TI", "BlockNum"] <- "Block2"
+DPrime_Exps3and4[DPrime_Exps3and4$BlockOrder=="TIFirst" & DPrime_Exps3and4$Block=="TI", "BlockNum"] <- "Block1"
+DPrime_Exps3and4[DPrime_Exps3and4$BlockOrder=="TIFirst" & DPrime_Exps3and4$Block=="TR", "BlockNum"] <- "Block2"
+CheckMerge(DPrime_Exps3and4)
+
+
+ezANOVA(data=DPrime_Exps3and4, dv=DPrime, wid=Participant_Exp, within=BlockNum, between=c(BlockOrder), detailed=TRUE, type=2)
 
 for(blockord in c("TRFirst", "TIFirst")){
   print(sprintf("Difference between TR and TI in %s", blockord))
