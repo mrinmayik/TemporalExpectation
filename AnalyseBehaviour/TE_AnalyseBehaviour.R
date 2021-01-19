@@ -1047,6 +1047,37 @@ RespPatterns_Long <- melt(RespPatterns, id.vars=c("Participant", "Condition", "B
 RespPatterns_Long <- RespPatterns_Long %>% dplyr::rename(Response=variable,
                                                          NumResp=value)
 
+TotalTrials <- ddply(RespPatterns_Long, c("Participant", "Condition", "Block"), summarise, TotalTrials=sum(NumResp))
+RespPatterns_Long <- merge(RespPatterns_Long, TotalTrials, by=c("Participant", "Condition", "Block"), all=TRUE)
+RespPatterns_Long$MnemSim <- 1-(RespPatterns_Long$NumResp/RespPatterns_Long$TotalTrials)
+
+SummaryMnemSim <- ddply(RespPatterns_Long[RespPatterns_Long$Response=="OldResp", ],
+                        c("Block", "Condition"), SummaryData, "MnemSim")
+SummaryMnemSim$Block <- factor(SummaryMnemSim$Block, 
+                               levels=FactorLabels[[ExpName]]$Block$levels,
+                               labels=FactorLabels[[ExpName]]$Block$labels)
+SummaryMnemSim$Condition <- factor(SummaryMnemSim$Condition, 
+                                   levels=FactorLabels[[ExpName]]$Condition$levels,
+                                   labels=gsub(" ", "\n", FactorLabels[[ExpName]]$Condition$labels))
+
+#Plot this
+MnemSimLine <- ggplot(data=SummaryMnemSim, aes(x=Condition, y=Mean, group=Block)) +
+  geom_line(aes(linetype=Block), color="#000000", size=1.2) +  
+  geom_point(color="#000000", size=3) + 
+  labs(x="Object Type", y="1-p(Old)") +
+  coord_cartesian(ylim=c(0, 1)) +
+  paperlegendtheme + blankbgtheme + paperyaxistheme + paperxaxistheme + papercanvastheme + papertickstheme +
+  theme(axis.text.x = element_text(vjust = 0, size=30), 
+                           axis.title.x = element_text(vjust = -2, size=35))
+if(Save==1){
+  jpeg(filename=sprintf("%s/Manuscript/Revisions_Round1/MnemSim_%s.jpeg", 
+                        BasePath, ExpName), 
+       width=3500, height=2500, res=300)
+  plot((MnemSimLine + posterlegendtheme + posterxaxistheme + posteryaxistheme))
+  dev.off()
+}
+
+
 #Collapse across participants
 SummaryRespPatterns <- ddply(RespPatterns_Long, c("Condition", "Block", "Response"), SummaryData, "NumResp")
 
@@ -1330,7 +1361,7 @@ if(Exp==5){
                           y=DprimeData_Long[DprimeData_Long$Block=="TI", "DPrime"], 
                           paired=TRUE)
   
-  DPrimeBlockOrder_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=BlockNum,
+  DPrimeBlockOrder_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=Block,
                                     between=BlockOrder, detailed=TRUE, type=2)
   aovEffectSize(DPrimeBlockOrder_ANOVA)$ANOVA
   
@@ -1352,19 +1383,19 @@ if(Exp==5){
     if(blockord=="TRFirst"){
       SummaryDprimeBlockOrder$Block <- factor(SummaryDprimeBlockOrder$Block,
                                               levels=c("TR", "TI"),
-                                              labels=c("Structured", "Unstructured"))
+                                              labels=c("Block 1:\nStructured", "Block 2:\nUnstructured"))
       blockord_label <- "Structured First"
       fillvalues <- c("#444444", "#aaaaaa")
-      fillbreaks <- c("Structured", "Unstructured")
-      fillabels <- c("Structured", "Unstructured")
+      fillbreaks <- c("Block 1:\nStructured", "Block 2:\nUnstructured")
+      fillabels <- c("Block 1:\nStructured", "Block 2:\nUnstructured")
     }else if(blockord=="TIFirst"){
       SummaryDprimeBlockOrder$Block <- factor(SummaryDprimeBlockOrder$Block,
                                               levels=c("TI", "TR"),
-                                              labels=c("Unstructured", "Structured"))
+                                              labels=c("Block 1:\nUnstructured", "Block 2:\nStructured"))
       blockord_label <- "Unstructured First"
       fillvalues <- c("#aaaaaa", "#444444")
-      fillbreaks <- c("Unstructured", "Structured")
-      fillabels <- c("Unstructured", "Structured")
+      fillbreaks <- c("Block 1:\nUnstructured", "Block 2:\nStructured")
+      fillabels <- c("Block 1:\nUnstructured", "Block 2:\nStructured")
     }
     
     DPrimeBlockOrderBar <- ggplot(data=SummaryDprimeBlockOrder[SummaryDprimeBlockOrder$BlockOrder==blockord_label,], 
@@ -1374,8 +1405,16 @@ if(Exp==5){
       coord_cartesian(ylim=c(0, 3.5)) +
       geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
       labs(x="Timing", y="D Prime") + theme(legend.position="None") +
-      papertickstheme + paperxaxistheme + paperyaxistheme + blankbgtheme + papercanvastheme + paperlegendtheme 
+      papertickstheme + paperxaxistheme + paperyaxistheme + blankbgtheme + papercanvastheme + paperlegendtheme
     assign(paste("DPrimeBlockOrderBar_", blockord, sep=""), DPrimeBlockOrderBar)
+    
+    if(Save==1){
+      jpeg(filename=sprintf("%s/Manuscript/Revisions_Round1/BlockOrder_%s_%s.jpeg", 
+                            BasePath, blockord, ExpName), 
+           width=2500, height=3000, res=300) 
+      plot((DPrimeBlockOrderBar + theme(legend.position="None")))
+      dev.off()
+    }
   }  
   
   #Check by condition because for Exp 4 there was a condition*block order interaction
