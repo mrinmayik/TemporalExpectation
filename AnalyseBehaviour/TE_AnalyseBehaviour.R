@@ -1273,170 +1273,90 @@ if(Exp %in% c(3, 4)){
 
 ########Then apply to Dprime######
 if(Exp==5){
-  DprimeData[DprimeData$Participant %in% TRFirst, "BlockOrder"] <- "TRFirst"
-  DprimeData[DprimeData$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
-  CheckMerge(DprimeData)
-  
-  #Run t-test for block
-  DPrime_ttest <- twosample_ttest(grp1=DprimeData[DprimeData$Block=="TR", "DPrime"],
-                                  grp2=DprimeData[DprimeData$Block=="TI", "DPrime"],
-                                  paired=TRUE)
-  DPrime_CohensD <- cohen.d(formula=DPrime~Block | Subject(Participant), 
-                            data=DprimeData, paired=TRUE, pooled=TRUE,
-                            within=TRUE)
-  
-  DPrime_BF <- ttestBF(x=DprimeData[DprimeData$Block=="TR", "DPrime"], 
-                       y=DprimeData[DprimeData$Block=="TI", "DPrime"], 
-                       paired=TRUE)
-  DPrimeBlockOrder_ANOVA <- ezANOVA(data=DprimeData, dv=DPrime, wid=Participant, within=c(Block),
-                                    between=BlockOrder, detailed=TRUE, type=2)
-  aovEffectSize(DPrimeBlockOrder_ANOVA)$ANOVA
-  
-  DprimeData$Block <- factor(DprimeData$Block)
-  DprimeData$BlockOrder <- factor(DprimeData$BlockOrder)
-  DprimeBlockOrder_BF <- anovaBF(formula=DPrime~Block*BlockOrder, data=DprimeData)
-  DprimeBlockOrder_BF/max(DprimeBlockOrder_BF)
-  
-  for(blockord in c("TRFirst", "TIFirst")){
-    print(sprintf("Difference between TR and TI in %s", blockord))
-    print(twosample_ttest(grp1=DprimeData[DprimeData$BlockOrder==blockord & DprimeData$Block=="TR", "DPrime"], 
-                          grp2=DprimeData[DprimeData$BlockOrder==blockord & DprimeData$Block=="TI", "DPrime"], 
-                          paired=TRUE))
-    
-    SummaryDprimeBlockOrder <- ddply(DprimeData, c("Block", "BlockOrder"), SummaryData, "DPrime")
-    SummaryDprimeBlockOrder$BlockOrder <- factor(SummaryDprimeBlockOrder$BlockOrder,
-                                                 levels=c("TRFirst", "TIFirst"),
-                                                 labels=c("Structured First", "Unstructured First"))
-    if(blockord=="TRFirst"){
-      SummaryDprimeBlockOrder$Block <- factor(SummaryDprimeBlockOrder$Block,
-                                              levels=c("TR", "TI"),
-                                              labels=c("Structured", "Unstructured"))
-      blockord_label <- "Structured First"
-      fillvalues <- c("#444444", "#aaaaaa")
-      fillbreaks <- c("Structured", "Unstructured")
-      fillabels <- c("Structured", "Unstructured")
-    }else if(blockord=="TIFirst"){
-      SummaryDprimeBlockOrder$Block <- factor(SummaryDprimeBlockOrder$Block,
-                                              levels=c("TI", "TR"),
-                                              labels=c("Unstructured", "Structured"))
-      blockord_label <- "Unstructured First"
-      fillvalues <- c("#aaaaaa", "#444444")
-      fillbreaks <- c("Unstructured", "Structured")
-      fillabels <- c("Unstructured", "Structured")
-    }
-    
-    DPrimeBlockOrderBar <- ggplot(data=SummaryDprimeBlockOrder[SummaryDprimeBlockOrder$BlockOrder==blockord_label,], 
-                                  aes(x=Block, y=Mean, fill=Block)) +
-      stdbar + 
-      scale_fill_manual(values=fillvalues, breaks=fillbreaks, labels=fillabels) + 
-      coord_cartesian(ylim=c(0, 3.5)) +
-      geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-      labs(x="Timing", y="D Prime") + theme(legend.position="None") +
-      papertickstheme + paperxaxistheme + paperyaxistheme + blankbgtheme + papercanvastheme + paperlegendtheme 
-    assign(paste("DPrimeBlockOrderBar_", blockord, sep=""), DPrimeBlockOrderBar)
-  }  
-  
+  DprimeData_Long <- DprimeData
 }else if(Exp %in% c(3,4)){
-  DprimeData_Long[DprimeData_Long$Participant %in% TRFirst, "BlockOrder"] <- "TRFirst"
-  DprimeData_Long[DprimeData_Long$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
-  
-  DprimeData_Long[DprimeData_Long$BlockOrder=="TRFirst" & DprimeData_Long$Block=="TR", "BlockNum"] <- "Block1"
-  DprimeData_Long[DprimeData_Long$BlockOrder=="TRFirst" & DprimeData_Long$Block=="TI", "BlockNum"] <- "Block2"
-  DprimeData_Long[DprimeData_Long$BlockOrder=="TIFirst" & DprimeData_Long$Block=="TI", "BlockNum"] <- "Block1"
-  DprimeData_Long[DprimeData_Long$BlockOrder=="TIFirst" & DprimeData_Long$Block=="TR", "BlockNum"] <- "Block2"
-  CheckMerge(DprimeData_Long)
-  
   #Only keep dprime for new data to make this comparable with the Thavabalasingam et al. (2016) results
   DprimeData_Long <- DprimeData_Long[DprimeData_Long$Condition=="New", ]
-  
-  #Run t-test for block
-  DPrime_ttest <- twosample_ttest(grp1=DprimeData_Long[DprimeData_Long$Block=="TR", "DPrime"],
-                                     grp2=DprimeData_Long[DprimeData_Long$Block=="TI", "DPrime"],
-                                     paired=TRUE)
-  DPrime_CohensD <- cohen.d(formula=DPrime~Block | Subject(Participant), 
-                               data=DprimeData_Long, paired=TRUE, pooled=TRUE,
-                               within=TRUE)
-  
-  DPrime_BF <- ttestBF(x=DprimeData_Long[DprimeData_Long$Block=="TR", "DPrime"], 
-                          y=DprimeData_Long[DprimeData_Long$Block=="TI", "DPrime"], 
-                          paired=TRUE)
-  
-  DPrimeBlockOrder_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=Block,
-                                    between=BlockOrder, detailed=TRUE, type=2)
-  aovEffectSize(DPrimeBlockOrder_ANOVA)$ANOVA
-  
-  DprimeData_Long$Block <- factor(DprimeData_Long$Block)
-  DprimeData_Long$BlockOrder <- factor(DprimeData_Long$BlockOrder)
-  DprimeBlockOrder_BF <- anovaBF(formula=DPrime~Block*BlockOrder, data=DprimeData_Long)
-  DprimeBlockOrder_BF/max(DprimeBlockOrder_BF)
-  
-  for(blockord in c("TRFirst", "TIFirst")){
-    print(sprintf("Difference between TR and TI in %s", blockord))
-    print(twosample_ttest(grp1=DprimeData_Long[DprimeData_Long$BlockOrder==blockord & DprimeData_Long$Block=="TR", "DPrime"], 
-                          grp2=DprimeData_Long[DprimeData_Long$BlockOrder==blockord & DprimeData_Long$Block=="TI", "DPrime"], 
-                          paired=TRUE))
-  
-    SummaryDprimeBlockOrder <- ddply(DprimeData_Long, c("Block", "BlockOrder"), SummaryData, "DPrime")
-    SummaryDprimeBlockOrder$BlockOrder <- factor(SummaryDprimeBlockOrder$BlockOrder,
-                                                 levels=c("TRFirst", "TIFirst"),
-                                                 labels=c("Structured First", "Unstructured First"))
-    if(blockord=="TRFirst"){
-      SummaryDprimeBlockOrder$Block <- factor(SummaryDprimeBlockOrder$Block,
-                                              levels=c("TR", "TI"),
-                                              labels=c("Block 1:\nStructured", "Block 2:\nUnstructured"))
-      blockord_label <- "Structured First"
-      fillvalues <- c("#444444", "#aaaaaa")
-      fillbreaks <- c("Block 1:\nStructured", "Block 2:\nUnstructured")
-      fillabels <- c("Block 1:\nStructured", "Block 2:\nUnstructured")
-    }else if(blockord=="TIFirst"){
-      SummaryDprimeBlockOrder$Block <- factor(SummaryDprimeBlockOrder$Block,
-                                              levels=c("TI", "TR"),
-                                              labels=c("Block 1:\nUnstructured", "Block 2:\nStructured"))
-      blockord_label <- "Unstructured First"
-      fillvalues <- c("#aaaaaa", "#444444")
-      fillbreaks <- c("Block 1:\nUnstructured", "Block 2:\nStructured")
-      fillabels <- c("Block 1:\nUnstructured", "Block 2:\nStructured")
-    }
-    
-    DPrimeBlockOrderBar <- ggplot(data=SummaryDprimeBlockOrder[SummaryDprimeBlockOrder$BlockOrder==blockord_label,], 
-                                          aes(x=Block, y=Mean, fill=Block)) +
-      stdbar + 
-      scale_fill_manual(values=fillvalues, breaks=fillbreaks, labels=fillabels) + 
-      coord_cartesian(ylim=c(0, 3.5)) +
-      geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-      labs(x="Timing", y="D Prime") + theme(legend.position="None") +
-      papertickstheme + paperxaxistheme + paperyaxistheme + blankbgtheme + papercanvastheme + paperlegendtheme
-    assign(paste("DPrimeBlockOrderBar_", blockord, sep=""), DPrimeBlockOrderBar)
-    
-    if(Save==1){
-      jpeg(filename=sprintf("%s/Manuscript/Revisions_Round1/BlockOrder_%s_%s.jpeg", 
-                            BasePath, blockord, ExpName), 
-           width=2500, height=3000, res=300) 
-      plot((DPrimeBlockOrderBar + theme(legend.position="None")))
-      dev.off()
-    }
-  }  
-  
-  #Check by condition because for Exp 4 there was a condition*block order interaction
-  if(Exp==4){
-    SummaryDprimeBlockOrder_Cond <- ddply(DprimeData_Long, c("BlockOrder", "Condition"), SummaryData, "DPrime")
-    SummaryDprimeBlockOrder_Cond$Condition <- factor(SummaryDprimeBlockOrder_Cond$Condition,
-                                                     levels=FactorLabels[[ExpName]]$Condition$levels,
-                                                     labels=FactorLabels[[ExpName]]$Condition$labels)
-    SummaryDprimeBlockOrder_Cond$BlockOrder <- factor(SummaryDprimeBlockOrder_Cond$BlockOrder,
-                                                      levels=c("TRFirst", "TIFirst"),
-                                                      labels=c("Structured First", "Unstructured First"))
-    
-    BPSScoreBlockOrderBar_Cond <- ggplot(data=SummaryDprimeBlockOrder_Cond, aes(x=BlockOrder, y=Mean, fill=Condition)) +
-      stdbar + 
-      scale_fill_manual(values=c("#444444", "#aaaaaa", "#111111"),
-                        labels=FactorLabels[[ExpName]]$Condition$labels) + 
-      coord_cartesian(ylim=c(0, 3)) +
-      geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
-      labs(x="Block Order", y="D Prime") + theme(legend.position="None") +
-      papertickstheme + paperxaxistheme + paperyaxistheme + blankbgtheme + papercanvastheme + paperlegendtheme 
-  }
 }
+
+DprimeData_Long[DprimeData_Long$Participant %in% TRFirst, "BlockOrder"] <- "TRFirst"
+DprimeData_Long[DprimeData_Long$Participant %in% TIFirst, "BlockOrder"] <- "TIFirst"
+
+DprimeData_Long[DprimeData_Long$BlockOrder=="TRFirst" & DprimeData_Long$Block=="TR", "BlockNum"] <- "Block1"
+DprimeData_Long[DprimeData_Long$BlockOrder=="TRFirst" & DprimeData_Long$Block=="TI", "BlockNum"] <- "Block2"
+DprimeData_Long[DprimeData_Long$BlockOrder=="TIFirst" & DprimeData_Long$Block=="TI", "BlockNum"] <- "Block1"
+DprimeData_Long[DprimeData_Long$BlockOrder=="TIFirst" & DprimeData_Long$Block=="TR", "BlockNum"] <- "Block2"
+CheckMerge(DprimeData_Long)
+
+
+#Run t-test for block
+DPrime_ttest <- twosample_ttest(grp1=DprimeData_Long[DprimeData_Long$Block=="TR", "DPrime"],
+                                grp2=DprimeData_Long[DprimeData_Long$Block=="TI", "DPrime"],
+                                paired=TRUE)
+DPrime_CohensD <- cohen.d(formula=DPrime~Block | Subject(Participant), 
+                          data=DprimeData_Long, paired=TRUE, pooled=TRUE,
+                          within=TRUE)
+
+DPrime_BF <- ttestBF(x=DprimeData_Long[DprimeData_Long$Block=="TR", "DPrime"], 
+                     y=DprimeData_Long[DprimeData_Long$Block=="TI", "DPrime"], 
+                     paired=TRUE)
+
+DPrimeBlockOrder_ANOVA <- ezANOVA(data=DprimeData_Long, dv=DPrime, wid=Participant, within=Block,
+                                  between=BlockOrder, detailed=TRUE, type=2)
+aovEffectSize(DPrimeBlockOrder_ANOVA)$ANOVA
+
+DprimeData_Long$Block <- factor(DprimeData_Long$Block)
+DprimeData_Long$BlockOrder <- factor(DprimeData_Long$BlockOrder)
+DprimeBlockOrder_BF <- anovaBF(formula=DPrime~Block*BlockOrder, data=DprimeData_Long)
+DprimeBlockOrder_BF/max(DprimeBlockOrder_BF)
+
+for(blockord in c("TRFirst", "TIFirst")){
+  print(sprintf("Difference between TR and TI in %s", blockord))
+  print(twosample_ttest(grp1=DprimeData_Long[DprimeData_Long$BlockOrder==blockord & DprimeData_Long$Block=="TR", "DPrime"], 
+                        grp2=DprimeData_Long[DprimeData_Long$BlockOrder==blockord & DprimeData_Long$Block=="TI", "DPrime"], 
+                        paired=TRUE))
+  
+  SummaryDprimeBlockOrder <- ddply(DprimeData_Long, c("Block", "BlockOrder"), SummaryData, "DPrime")
+  SummaryDprimeBlockOrder$BlockOrder <- factor(SummaryDprimeBlockOrder$BlockOrder,
+                                               levels=c("TRFirst", "TIFirst"),
+                                               labels=c("Structured First", "Unstructured First"))
+  if(blockord=="TRFirst"){
+    SummaryDprimeBlockOrder$Block <- factor(SummaryDprimeBlockOrder$Block,
+                                            levels=c("TR", "TI"),
+                                            labels=c("Block 1:\nStructured", "Block 2:\nUnstructured"))
+    blockord_label <- "Structured First"
+    fillvalues <- c("#444444", "#aaaaaa")
+    fillbreaks <- c("Block 1:\nStructured", "Block 2:\nUnstructured")
+    fillabels <- c("Block 1:\nStructured", "Block 2:\nUnstructured")
+  }else if(blockord=="TIFirst"){
+    SummaryDprimeBlockOrder$Block <- factor(SummaryDprimeBlockOrder$Block,
+                                            levels=c("TI", "TR"),
+                                            labels=c("Block 1:\nUnstructured", "Block 2:\nStructured"))
+    blockord_label <- "Unstructured First"
+    fillvalues <- c("#aaaaaa", "#444444")
+    fillbreaks <- c("Block 1:\nUnstructured", "Block 2:\nStructured")
+    fillabels <- c("Block 1:\nUnstructured", "Block 2:\nStructured")
+  }
+  
+  DPrimeBlockOrderBar <- ggplot(data=SummaryDprimeBlockOrder[SummaryDprimeBlockOrder$BlockOrder==blockord_label,], 
+                                aes(x=Block, y=Mean, fill=Block)) +
+    stdbar + 
+    scale_fill_manual(values=fillvalues, breaks=fillbreaks, labels=fillabels) + 
+    coord_cartesian(ylim=c(0, 3.6)) +
+    geom_errorbar(mapping=aes(ymin=Mean-SE, ymax=Mean+SE), width=0.2, size=0.9, position=position_dodge(.9)) + 
+    labs(x="Timing", y="D Prime") + theme(legend.position="None") +
+    papertickstheme + paperxaxistheme + paperyaxistheme  + blankbgtheme + papercanvastheme
+  assign(paste("DPrimeBlockOrderBar_", blockord, sep=""), DPrimeBlockOrderBar)
+  
+  if(Save==1){
+    jpeg(filename=sprintf("%s/Manuscript/Revisions_Round1/BlockOrder_%s_%s.jpeg", 
+                          BasePath, blockord, ExpName), 
+         width=2500, height=3000, res=300) 
+    plot((DPrimeBlockOrderBar + theme(legend.position="None") +
+            scale_y_continuous(expand = c(0,0))))
+    dev.off()
+  }
+}  
 
 
 #Combine across exps 3 and 4 and check effect of block order
