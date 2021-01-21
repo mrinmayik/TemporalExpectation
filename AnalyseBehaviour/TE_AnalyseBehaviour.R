@@ -1049,7 +1049,7 @@ RespPatterns_Long <- RespPatterns_Long %>% dplyr::rename(Response=variable,
 
 TotalTrials <- ddply(RespPatterns_Long, c("Participant", "Condition", "Block"), summarise, TotalTrials=sum(NumResp))
 RespPatterns_Long <- merge(RespPatterns_Long, TotalTrials, by=c("Participant", "Condition", "Block"), all=TRUE)
-RespPatterns_Long$MnemSim <- 1-(RespPatterns_Long$NumResp/RespPatterns_Long$TotalTrials)
+RespPatterns_Long$MnemSim <- (RespPatterns_Long$NumResp/RespPatterns_Long$TotalTrials)
 
 SummaryMnemSim <- ddply(RespPatterns_Long[RespPatterns_Long$Response=="OldResp", ],
                         c("Block", "Condition"), SummaryData, "MnemSim")
@@ -1065,15 +1065,15 @@ MnemSimLine <- ggplot(data=SummaryMnemSim, aes(x=Condition, y=Mean, group=Block)
   geom_line(aes(linetype=Block), color="#000000", size=1.2) +  
   geom_point(color="#000000", size=3) + 
   labs(x="Object Type", y="1-p(Old)") +
-  coord_cartesian(ylim=c(0, 1)) +
-  paperlegendtheme + blankbgtheme + paperyaxistheme + paperxaxistheme + papercanvastheme + papertickstheme +
+  coord_cartesian(ylim=c(0, 1)) + scale_y_continuous(breaks=seq(0, 1, by=0.2), expand=c(0,0)) +
+  papertickstheme + paperxaxistheme + paperyaxistheme  + blankbgtheme + papercanvastheme +
   theme(axis.text.x = element_text(vjust = 0, size=30), 
-                           axis.title.x = element_text(vjust = -2, size=35))
+        axis.title.x = element_text(vjust = -2, size=35))
 if(Save==1){
   jpeg(filename=sprintf("%s/Manuscript/Revisions_Round1/MnemSim_%s.jpeg", 
                         BasePath, ExpName), 
-       width=3500, height=2500, res=300)
-  plot((MnemSimLine + posterlegendtheme + posterxaxistheme + posteryaxistheme))
+       width=2800, height=2500, res=300)
+  plot((MnemSimLine + theme(legend.position="None")))
   dev.off()
 }
 
@@ -1311,10 +1311,19 @@ DprimeBlockOrder_BF <- anovaBF(formula=DPrime~Block*BlockOrder, data=DprimeData_
 DprimeBlockOrder_BF/max(DprimeBlockOrder_BF)
 
 for(blockord in c("TRFirst", "TIFirst")){
-  print(sprintf("Difference between TR and TI in %s", blockord))
+  print(sprintf("\n\n\n\nDifference between TR and TI in %s", blockord))
   print(twosample_ttest(grp1=DprimeData_Long[DprimeData_Long$BlockOrder==blockord & DprimeData_Long$Block=="TR", "DPrime"], 
                         grp2=DprimeData_Long[DprimeData_Long$BlockOrder==blockord & DprimeData_Long$Block=="TI", "DPrime"], 
                         paired=TRUE))
+  print("\nBayes Factor:")
+  print(ttestBF(x=DprimeData_Long[DprimeData_Long$BlockOrder==blockord & DprimeData_Long$Block=="TR", "DPrime"], 
+                y=DprimeData_Long[DprimeData_Long$BlockOrder==blockord & DprimeData_Long$Block=="TI", "DPrime"], 
+                paired=TRUE))
+  
+  print("\nCohen's d:")
+  print(cohen.d(formula=DPrime~Block | Subject(Participant), 
+                data=DprimeData_Long[DprimeData_Long$BlockOrder==blockord, ], 
+                paired=TRUE, pooled=TRUE, within=TRUE))
   
   SummaryDprimeBlockOrder <- ddply(DprimeData_Long, c("Block", "BlockOrder"), SummaryData, "DPrime")
   SummaryDprimeBlockOrder$BlockOrder <- factor(SummaryDprimeBlockOrder$BlockOrder,
