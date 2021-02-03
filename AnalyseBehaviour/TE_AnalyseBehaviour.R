@@ -933,10 +933,19 @@ TradRecog_BF <- ttestBF(x=TradRecogScore[TradRecogScore$Block=="TR", "TradRecogS
 
 if(Exp %in% c(3, 4)){
   PropSimData <- PropResp[PropResp$Condition %in% c("Similar_HI", "Similar_LI"), ]
+  PropNewIncorr <- PropResp[(PropResp$Condition=="New" & PropResp$RespType=="Incorr"), 
+                            c("Participant", "Block", "PropResp")]
+  PropNewIncorr <- PropNewIncorr %>% dplyr::rename(NewIncorrTrials=PropResp)
+  
+  
+  PropSimData <- merge(PropSimData, PropNewIncorr, by=c("Participant", "Block"), all=TRUE)
+  PropSimData$BPSScore <- PropSimData$PropResp-PropSimData$NewIncorrTrials
+  BPSScore <- PropSimData[PropSimData$RespType=="CR",]
+  
   #CR=Similar that was correctly rejected
   #Incorr=Similar that was called new
-  BPSScore <- ddply(PropSimData, c("Participant", "Condition", "Block"), summarise, 
-                    BPSScore=PropResp[RespType=="CR"]-PropResp[RespType=="Incorr"])
+  #BPSScore <- ddply(PropSimData, c("Participant", "Condition", "Block"), summarise, 
+  #                  BPSScore=PropResp[RespType=="CR"]-PropResp[RespType=="Incorr"])
   
   SummaryBPSScore <- ddply(BPSScore, c("Condition", "Block"), SummaryData, "BPSScore")
   SummaryBPSScore$Condition <- factor(SummaryBPSScore$Condition, 
