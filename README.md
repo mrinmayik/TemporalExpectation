@@ -5,6 +5,6 @@ In this project we attempted to replicate and extend recent findings of enhaced 
 
 #### Details of code
 The repository contains two folders. 
-- The MakeCounterbalance folder contains the scripts used to generate subject-specific trial order information for encoding and test phases, while satisfying all counterbalancing requirements.
-- The AnalyseBehaviour folder contains the script used to... well, analyse behavioural data. The analyses reported in the paper are included here, along with a bunch of other analyses I tried, that didn't make their way to the paper.
+- The **MakeCounterbalance** folder contains the scripts used to generate subject-specific trial order information for encoding and test phases, while satisfying all counterbalancing requirements.
+- The **AnalyseBehaviour** folder contains the script used to... well, analyse behavioural data. The analyses reported in the paper are included here, along with a bunch of other analyses I tried, that didn't make their way to the paper.
 
